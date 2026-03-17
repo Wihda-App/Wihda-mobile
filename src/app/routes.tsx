@@ -20,6 +20,7 @@ import Notifications from "./pages/Notifications";
 import Leftovers from "./pages/Leftovers";
 import NotFound from "./pages/NotFound";
 import GoogleCallback from "./pages/GoogleCallback";
+import ForgotPassword from "./pages/ForgotPassword";
 import HelpCenter from "./pages/HelpCenter";
 import MyListings from "./pages/MyListings";
 import MyImpact from "./pages/MyImpact";
@@ -111,6 +112,10 @@ export function getRouter() {
           {
             path: "auth/google/callback",
             Component: GoogleCallback,
+          },
+          {
+            path: "forgot-password",
+            Component: ForgotPassword,
           },
           {
             path: "help-center",
