@@ -26,15 +26,16 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
-type CleaningStep = 'intro' | 'upload-before' | 'timer' | 'upload-after' | 'validating' | 'approved' | 'rejected' | 'pending-review';
+type CleaningStep = 'checking' | 'intro' | 'active-exists' | 'upload-before' | 'timer' | 'upload-after' | 'validating' | 'approved' | 'rejected' | 'pending-review';
 
 const MIN_DELAY_MINUTES = 20;
 
 export default function CleanAndEarn() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [step, setStep] = useState<CleaningStep>('intro');
+  const [step, setStep] = useState<CleaningStep>('checking');
   const [submissionId, setSubmissionId] = useState<string | null>(null);
+  const [activeSubmission, setActiveSubmission] = useState<any | null>(null);
   const [beforeImage, setBeforeImage] = useState<string | null>(null);
   const [afterImage, setAfterImage] = useState<string | null>(null);
   const [beforeUploadedAt, setBeforeUploadedAt] = useState<Date | null>(null);
@@ -43,7 +44,6 @@ export default function CleanAndEarn() {
   const [coinsEarned, setCoinsEarned] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [activeSubmissionId, setActiveSubmissionId] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileInputBeforeRef = useRef<HTMLInputElement>(null);
   const fileInputAfterRef = useRef<HTMLInputElement>(null);
@@ -57,27 +57,47 @@ export default function CleanAndEarn() {
     return () => { listener.then(l => l.remove()); };
   }, [navigate]);
 
-  // Auto-resume active submission on mount
+  // Check for active submission on mount
   useEffect(() => {
-    if (!user) return;
-    apiFetch('/v1/cleanify/submissions?status=active&limit=1')
+    if (!user) { setStep('intro'); return; }
+    apiFetch('/v1/cleanify/active')
       .then((data) => {
-        if (!data.success) return;
-        const subs: any[] = data.data?.submissions ?? data.data ?? [];
-        const active = subs.find((s: any) =>
-          s.status === 'draft_before' || s.status === 'in_progress'
-        );
-        if (!active) return;
-        setSubmissionId(active.id);
-        if (active.status === 'in_progress') {
-          setBeforeUploadedAt(active.before_uploaded_at ? new Date(active.before_uploaded_at) : null);
-          setStep('upload-after');
+        const sub = data.data?.submission;
+        if (sub) {
+          setActiveSubmission(sub);
+          setStep('active-exists');
         } else {
-          setStep('upload-before');
+          setStep('intro');
         }
       })
-      .catch(() => {});
+      .catch(() => setStep('intro'));
   }, [user]);
+
+  const resumeActiveSubmission = () => {
+    if (!activeSubmission) return;
+    setSubmissionId(activeSubmission.id);
+    if (activeSubmission.status === 'in_progress') {
+      setBeforeUploadedAt(activeSubmission.before_uploaded_at ? new Date(activeSubmission.before_uploaded_at) : null);
+      setStep('upload-after');
+    } else {
+      setStep('upload-before');
+    }
+    setActiveSubmission(null);
+  };
+
+  const abandonActiveSubmission = async () => {
+    if (!activeSubmission) return;
+    setLoading(true);
+    try {
+      await apiFetch(`/v1/cleanify/${activeSubmission.id}/abandon`, { method: 'POST' });
+      setActiveSubmission(null);
+      setStep('intro');
+    } catch {
+      toast.error('Failed to abandon submission');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     return () => {
@@ -112,14 +132,8 @@ export default function CleanAndEarn() {
         }).catch(() => {});
       }
     } catch (err: any) {
-      if (err.code === 'ACTIVE_SUBMISSION_EXISTS' || err.message?.includes('active submission')) {
-        const idMatch = err.message?.match(/id: ([a-f0-9-]{36})/);
-        if (idMatch) setActiveSubmissionId(idMatch[1]);
-        setError('active_submission');
-      } else {
-        setError(err.message || 'Failed to start submission');
-        toast.error(err.message || 'Failed to start');
-      }
+      setError(err.message || 'Failed to start submission');
+      toast.error(err.message || 'Failed to start');
     } finally {
       setLoading(false);
     }
@@ -307,6 +321,7 @@ export default function CleanAndEarn() {
   const resetFlow = () => {
     setStep('intro');
     setSubmissionId(null);
+    setActiveSubmission(null);
     setBeforeImage(null);
     setAfterImage(null);
     setBeforeUploadedAt(null);
@@ -314,7 +329,6 @@ export default function CleanAndEarn() {
     setIsTimerRunning(false);
     setCoinsEarned(0);
     setError('');
-    setActiveSubmissionId(null);
     if (timerRef.current) clearInterval(timerRef.current);
   };
 
@@ -323,7 +337,7 @@ export default function CleanAndEarn() {
     : 0;
   const canUploadAfter = minutesSinceBefore >= MIN_DELAY_MINUTES;
 
-  const stepNumber = step === 'intro' ? 0 : step === 'upload-before' ? 1 : step === 'timer' ? 2 : step === 'upload-after' ? 3 : 4;
+  const stepNumber = (step === 'intro' || step === 'checking' || step === 'active-exists') ? 0 : step === 'upload-before' ? 1 : step === 'timer' ? 2 : step === 'upload-after' ? 3 : 4;
 
   return (
     <MobileContainer>
@@ -340,7 +354,7 @@ export default function CleanAndEarn() {
           </div>
 
           {/* Progress Steps */}
-          {stepNumber > 0 && stepNumber < 4 && (
+          {stepNumber > 0 && stepNumber < 4 && step !== 'active-exists' && (
             <div className="flex items-center gap-2 mb-4">
               {[1, 2, 3].map((s) => (
                 <div key={s} className="flex-1 flex items-center gap-2">
@@ -357,33 +371,62 @@ export default function CleanAndEarn() {
         <div className="flex-1 overflow-y-auto px-5 pb-8 relative">
 
           {/* Global error */}
-          {error === 'active_submission' ? (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
-              <div className="flex items-start gap-2 mb-3">
-                <AlertCircle className="size-4 text-red-500 shrink-0 mt-0.5" />
-                <p className="text-[13px] text-red-600 font-medium">You have an unfinished submission</p>
-              </div>
-              <p className="text-[12px] text-red-500 mb-3 pl-6">Please complete or abandon your previous session before starting a new one.</p>
-              {activeSubmissionId && (
-                <button
-                  onClick={() => {
-                    setSubmissionId(activeSubmissionId);
-                    setError('');
-                    setActiveSubmissionId(null);
-                    setStep('upload-before');
-                  }}
-                  className="w-full bg-red-500 text-white py-2.5 rounded-xl text-[13px] font-semibold active:scale-[0.98] transition-transform"
-                >
-                  Resume Session
-                </button>
-              )}
-            </div>
-          ) : error ? (
+          {error && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4 flex items-center gap-2">
               <AlertCircle className="size-4 text-red-500 shrink-0" />
               <p className="text-[13px] text-red-600">{error}</p>
             </div>
-          ) : null}
+          )}
+
+          {/* ── Checking ── */}
+          {step === 'checking' && (
+            <div className="flex flex-col items-center justify-center pt-32">
+              <Loader2 className="size-8 text-[#14ae5c] animate-spin" />
+            </div>
+          )}
+
+          {/* ── Active Submission Exists ── */}
+          {step === 'active-exists' && (
+            <div className="flex flex-col items-center pt-12 px-2">
+              <div className="bg-orange-50 rounded-3xl p-6 mb-5">
+                <Clock className="size-14 text-orange-400" />
+              </div>
+              <h2 className="text-[21px] font-semibold text-gray-900 mb-2 text-center">Unfinished Session</h2>
+              <p className="text-gray-500 text-[14px] text-center mb-8 px-4">
+                You have a Clean & Earn session in progress. Would you like to continue where you left off?
+              </p>
+
+              <div className="w-full bg-orange-50 border border-orange-100 rounded-2xl p-4 mb-8">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className={`size-2 rounded-full ${activeSubmission?.status === 'in_progress' ? 'bg-green-500' : 'bg-orange-400'}`} />
+                  <p className="text-[13px] font-semibold text-gray-700">
+                    {activeSubmission?.status === 'in_progress' ? 'Before photo uploaded — waiting for after photo' : 'Before photo not yet uploaded'}
+                  </p>
+                </div>
+                {activeSubmission?.before_uploaded_at && (
+                  <p className="text-[12px] text-gray-400 mt-1 pl-4">
+                    Started {new Date(activeSubmission.before_uploaded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-3 w-full">
+                <button
+                  onClick={resumeActiveSubmission}
+                  className="w-full bg-[#14ae5c] text-white py-4 rounded-2xl text-[15px] font-semibold active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
+                >
+                  <ArrowRight className="size-5" /> Continue Session
+                </button>
+                <button
+                  onClick={abandonActiveSubmission}
+                  disabled={loading}
+                  className="w-full bg-red-500 text-white py-4 rounded-2xl text-[15px] font-semibold active:scale-[0.98] transition-transform flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  {loading ? <Loader2 className="size-5 animate-spin" /> : 'Abandon & Start New'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* ── Intro ── */}
           {step === 'intro' && (
