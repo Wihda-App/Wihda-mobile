@@ -44,9 +44,12 @@ export default function CleanAndEarn() {
   const [coinsEarned, setCoinsEarned] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [photoSheetFor, setPhotoSheetFor] = useState<'before' | 'after' | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileInputBeforeRef = useRef<HTMLInputElement>(null);
+  const fileInputBeforeCameraRef = useRef<HTMLInputElement>(null);
   const fileInputAfterRef = useRef<HTMLInputElement>(null);
+  const fileInputAfterCameraRef = useRef<HTMLInputElement>(null);
 
   // Request notification permission and handle tap
   useEffect(() => {
@@ -498,7 +501,7 @@ export default function CleanAndEarn() {
               </p>
 
               <button
-                onClick={() => fileInputBeforeRef.current?.click()}
+                onClick={() => setPhotoSheetFor('before')}
                 disabled={loading}
                 className="w-full h-[280px] border-2 border-dashed border-[#14ae5c]/40 rounded-2xl flex flex-col items-center justify-center bg-green-50/30 active:bg-green-50 transition-colors disabled:opacity-60"
               >
@@ -509,19 +512,14 @@ export default function CleanAndEarn() {
                     <div className="bg-[#14ae5c]/10 rounded-full p-4 mb-3">
                       <ImageIcon className="size-8 text-[#14ae5c]" />
                     </div>
-                    <p className="text-[14px] font-medium text-[#14ae5c]">Tap to upload photo</p>
-                    <p className="text-[12px] text-gray-400 mt-1">JPG, PNG, HEIC or take a photo</p>
+                    <p className="text-[14px] font-medium text-[#14ae5c]">Tap to add photo</p>
+                    <p className="text-[12px] text-gray-400 mt-1">Camera or photo library</p>
                   </>
                 )}
               </button>
 
-              <input
-                ref={fileInputBeforeRef}
-                type="file"
-                accept="image/*"
-                onChange={handleBeforeImageUpload}
-                className="hidden"
-              />
+              <input ref={fileInputBeforeCameraRef} type="file" accept="image/*" capture="environment" onChange={handleBeforeImageUpload} className="hidden" />
+              <input ref={fileInputBeforeRef} type="file" accept="image/*" onChange={handleBeforeImageUpload} className="hidden" />
             </div>
           )}
 
@@ -614,7 +612,7 @@ export default function CleanAndEarn() {
               </div>
 
               <button
-                onClick={() => fileInputAfterRef.current?.click()}
+                onClick={() => canUploadAfter && setPhotoSheetFor('after')}
                 disabled={loading || !canUploadAfter}
                 className="w-full h-[200px] border-2 border-dashed border-[#14ae5c]/40 rounded-2xl flex flex-col items-center justify-center bg-green-50/30 active:bg-green-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -626,19 +624,14 @@ export default function CleanAndEarn() {
                       <ImageIcon className="size-8 text-[#14ae5c]" />
                     </div>
                     <p className="text-[14px] font-medium text-[#14ae5c]">
-                      {canUploadAfter ? 'Tap to upload after photo' : `Wait ${MIN_DELAY_MINUTES - minutesSinceBefore} min`}
+                      {canUploadAfter ? 'Tap to add photo' : `Wait ${MIN_DELAY_MINUTES - minutesSinceBefore} min`}
                     </p>
                   </>
                 )}
               </button>
 
-              <input
-                ref={fileInputAfterRef}
-                type="file"
-                accept="image/*"
-                onChange={handleAfterImageUpload}
-                className="hidden"
-              />
+              <input ref={fileInputAfterCameraRef} type="file" accept="image/*" capture="environment" onChange={handleAfterImageUpload} className="hidden" />
+              <input ref={fileInputAfterRef} type="file" accept="image/*" onChange={handleAfterImageUpload} className="hidden" />
 
               <p className="text-[12px] text-gray-400 mt-4 flex items-center gap-1">
                 <Clock className="size-3" /> Time spent: {formatTime(timeElapsed)}
@@ -787,6 +780,54 @@ export default function CleanAndEarn() {
           )}
         </div>
       </div>
+      {/* ── Photo picker bottom sheet ── */}
+      {photoSheetFor && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setPhotoSheetFor(null)} />
+          <div className="relative bg-white rounded-t-3xl px-5 pt-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+            <p className="text-[15px] font-semibold text-gray-900 mb-4 text-center">Add Photo</p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => {
+                  setPhotoSheetFor(null);
+                  setTimeout(() => {
+                    if (photoSheetFor === 'before') fileInputBeforeCameraRef.current?.click();
+                    else fileInputAfterCameraRef.current?.click();
+                  }, 100);
+                }}
+                className="flex items-center gap-4 bg-gray-50 rounded-2xl px-4 py-4 active:bg-gray-100 transition-colors"
+              >
+                <div className="bg-[#14ae5c]/10 rounded-xl p-2.5">
+                  <Camera className="size-5 text-[#14ae5c]" />
+                </div>
+                <div className="text-left">
+                  <p className="text-[14px] font-semibold text-gray-900">Take a Photo</p>
+                  <p className="text-[12px] text-gray-400">Use your camera</p>
+                </div>
+              </button>
+              <button
+                onClick={() => {
+                  setPhotoSheetFor(null);
+                  setTimeout(() => {
+                    if (photoSheetFor === 'before') fileInputBeforeRef.current?.click();
+                    else fileInputAfterRef.current?.click();
+                  }, 100);
+                }}
+                className="flex items-center gap-4 bg-gray-50 rounded-2xl px-4 py-4 active:bg-gray-100 transition-colors"
+              >
+                <div className="bg-blue-50 rounded-xl p-2.5">
+                  <ImageIcon className="size-5 text-blue-500" />
+                </div>
+                <div className="text-left">
+                  <p className="text-[14px] font-semibold text-gray-900">Upload from Library</p>
+                  <p className="text-[12px] text-gray-400">Choose an existing photo</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       </SwipeBack>
       </PageTransition>
     </MobileContainer>
