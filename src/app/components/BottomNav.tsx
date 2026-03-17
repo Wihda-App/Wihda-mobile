@@ -1,5 +1,9 @@
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import { Home, Activity, Plus, Store, User } from 'lucide-react';
+import {
+  Home, Activity, Plus, Store, User, X,
+  Utensils, Package, Handshake, HeartHandshake, HelpCircle, ArrowLeftRight,
+} from 'lucide-react';
 
 function triggerHaptic() {
   if ('vibrate' in navigator) {
@@ -7,71 +11,133 @@ function triggerHaptic() {
   }
 }
 
+const sheetActions = [
+  { id: 'leftovers',  label: 'Share Food',  sublabel: 'Offer leftovers',    icon: Utensils,       color: 'text-orange-500', bg: 'bg-orange-50',  path: '/category/leftovers'  },
+  { id: 'old-items',  label: 'Old Items',   sublabel: 'Give or reuse',       icon: Package,        color: 'text-blue-500',   bg: 'bg-blue-50',    path: '/category/old-items'  },
+  { id: 'borrow',     label: 'Borrow',      sublabel: 'Lend or borrow',      icon: Handshake,      color: 'text-purple-500', bg: 'bg-purple-50',  path: '/category/borrow'     },
+  { id: 'offer-help', label: 'Offer Help',  sublabel: 'Support neighbors',   icon: HeartHandshake, color: 'text-green-500',  bg: 'bg-green-50',   path: '/category/offer-help' },
+  { id: 'ask-help',   label: 'Ask Help',    sublabel: 'Request support',     icon: HelpCircle,     color: 'text-rose-500',   bg: 'bg-rose-50',    path: '/category/ask-help'   },
+  { id: 'exchange',   label: 'Exchange',    sublabel: 'Swap items',          icon: ArrowLeftRight, color: 'text-teal-500',   bg: 'bg-teal-50',    path: '/category/exchange'   },
+];
+
 export default function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
 
   const navItems = [
-    { path: '/home', icon: Home, label: 'Home' },
+    { path: '/home',       icon: Home,     label: 'Home'       },
     { path: '/activities', icon: Activity, label: 'Activities' },
-    { path: '__fab__', icon: Plus, label: 'Add' },
-    { path: '/store', icon: Store, label: 'Store' },
-    { path: '/profile', icon: User, label: 'Profile' },
+    { path: '__fab__',     icon: Plus,     label: 'Add'        },
+    { path: '/store',      icon: Store,    label: 'Store'      },
+    { path: '/profile',    icon: User,     label: 'Profile'    },
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-t border-gray-100/80 pb-[env(safe-area-inset-bottom)]">
-      <div className="flex items-center justify-around px-2 h-[64px] md:h-[72px] max-w-3xl mx-auto">
-        {navItems.map((item) => {
-          if (item.path === '__fab__') {
+    <>
+      {/* Action Bottom Sheet */}
+      {sheetOpen && (
+        <div className="fixed inset-0 z-[60] flex items-end">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setSheetOpen(false)}
+          />
+
+          {/* Sheet panel */}
+          <div className="relative w-full bg-white rounded-t-3xl px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+24px)] animate-slide-up shadow-2xl">
+            {/* Handle bar */}
+            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+
+            {/* Close button */}
+            <button
+              onClick={() => setSheetOpen(false)}
+              className="absolute top-4 right-5 size-8 bg-gray-100 rounded-full flex items-center justify-center active:bg-gray-200 transition-colors"
+            >
+              <X className="size-4 text-gray-500" />
+            </button>
+
+            <h3 className="text-[16px] font-semibold text-gray-900 mb-4">What would you like to do?</h3>
+
+            <div className="grid grid-cols-3 gap-3">
+              {sheetActions.map((action) => (
+                <button
+                  key={action.id}
+                  onClick={() => {
+                    triggerHaptic();
+                    setSheetOpen(false);
+                    navigate(action.path);
+                  }}
+                  className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-white border border-gray-100 shadow-sm active:scale-90 transition-all duration-150"
+                >
+                  <div className={`${action.bg} rounded-xl p-3`}>
+                    <action.icon className={`size-6 ${action.color}`} />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[11px] font-semibold text-gray-800 leading-tight">{action.label}</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">{action.sublabel}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Nav Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 pb-[env(safe-area-inset-bottom)]">
+        <div className="flex items-center justify-around px-2 h-[64px] md:h-[72px] max-w-3xl mx-auto">
+          {navItems.map((item) => {
+            if (item.path === '__fab__') {
+              return (
+                <button
+                  key={item.path}
+                  onClick={() => {
+                    triggerHaptic();
+                    setSheetOpen(true);
+                  }}
+                  className="flex items-center justify-center bg-[#14ae5c] text-white rounded-full size-[52px] md:size-[60px] shadow-lg shadow-[#14ae5c]/30 active:scale-90 transition-all duration-150 animate-pulse-ring mt-[-22px]"
+                  aria-label="Add"
+                >
+                  <Plus className="size-6 md:size-7" strokeWidth={2.5} />
+                </button>
+              );
+            }
+
+            const active = isActive(item.path);
             return (
               <button
                 key={item.path}
                 onClick={() => {
-                  triggerHaptic();
-                  navigate('/home');
+                  if (!active) {
+                    triggerHaptic();
+                    navigate(item.path);
+                  }
                 }}
-                className="flex items-center justify-center bg-[#14ae5c] text-white rounded-full size-[52px] md:size-[60px] shadow-lg shadow-[#14ae5c]/30 active:scale-90 transition-all duration-150 animate-pulse-ring mt-[-22px]"
-                aria-label="Add"
+                className={`flex flex-col items-center gap-0.5 px-3 md:px-5 py-1 rounded-xl transition-all duration-200 active:scale-90 ${
+                  active ? 'text-[#14ae5c]' : 'text-gray-400'
+                }`}
+                aria-label={item.label}
               >
-                <Plus className="size-6 md:size-7" strokeWidth={2.5} />
+                <div className="relative">
+                  <item.icon
+                    className={`size-[22px] md:size-[26px] transition-all duration-200 ${active ? 'scale-110' : ''}`}
+                    strokeWidth={active ? 2.2 : 1.8}
+                  />
+                  {active && (
+                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[#14ae5c]" />
+                  )}
+                </div>
+                <span className={`text-[10px] md:text-[12px] transition-all duration-200 ${active ? 'font-semibold' : 'font-medium'}`}>
+                  {item.label}
+                </span>
               </button>
             );
-          }
-
-          const active = isActive(item.path);
-          return (
-            <button
-              key={item.path}
-              onClick={() => {
-                if (!active) {
-                  triggerHaptic();
-                  navigate(item.path);
-                }
-              }}
-              className={`flex flex-col items-center gap-0.5 px-3 md:px-5 py-1 rounded-xl transition-all duration-200 active:scale-90 ${
-                active ? 'text-[#14ae5c]' : 'text-gray-400'
-              }`}
-              aria-label={item.label}
-            >
-              <div className="relative">
-                <item.icon
-                  className={`size-[22px] md:size-[26px] transition-all duration-200 ${active ? 'scale-110' : ''}`}
-                  strokeWidth={active ? 2.2 : 1.8}
-                />
-                {active && (
-                  <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[#14ae5c]" />
-                )}
-              </div>
-              <span className={`text-[10px] md:text-[12px] transition-all duration-200 ${active ? 'font-semibold' : 'font-medium'}`}>
-                {item.label}
-              </span>
-            </button>
-          );
-        })}
+          })}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

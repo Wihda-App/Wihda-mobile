@@ -78,28 +78,27 @@ export default function Header({
     <>
       <div className="px-5 md:px-8 pt-[env(safe-area-inset-top)] pb-4 bg-gradient-to-b from-[#f0faf4] to-white">
         <div className="flex items-center justify-between h-12">
-          {/* Left side — empty placeholder to keep greeting centered */}
-          <div className="w-6" />
-
-          {/* Right side — coins, store, menu */}
+          {/* Left side — store icon + coins */}
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 bg-[#fff9e6] px-3 py-1.5 rounded-full">
-              <div className="size-[18px] rounded-full border-[1.5px] border-[#f0a326] flex items-center justify-center">
-                <span className="text-[8px] font-bold text-[#f0a326]">$</span>
+            <button onClick={() => navigate('/store')} className="text-gray-700 active:scale-90 transition-transform" aria-label="Store">
+              <ShoppingBag className="size-5" />
+            </button>
+            <div className="flex items-center gap-1.5 bg-[#fff9e6] px-2.5 py-1.5 rounded-full">
+              <div className="size-[16px] rounded-full border-[1.5px] border-[#f0a326] flex items-center justify-center">
+                <span className="text-[7px] font-bold text-[#f0a326]">$</span>
               </div>
               <span className="text-[13px] md:text-[15px] font-semibold text-[#f0a326]">{coinsBalance}</span>
             </div>
-            <button onClick={() => navigate('/store')} className="text-gray-800" aria-label="Store">
-              <ShoppingBag className="size-5" />
-            </button>
-            <button
-              className="text-gray-800"
-              aria-label="Menu"
-              onClick={() => setSidebarOpen(true)}
-            >
-              <Menu className="size-6" />
-            </button>
           </div>
+
+          {/* Right side — menu */}
+          <button
+            className="text-gray-800"
+            aria-label="Menu"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <Menu className="size-6" />
+          </button>
         </div>
         <div className="mt-1">
           <h2 className="text-[20px] md:text-[24px] font-semibold text-gray-900 font-[Poppins,sans-serif]">
