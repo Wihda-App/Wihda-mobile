@@ -8,9 +8,11 @@ import { toast, Toaster } from 'sonner';
 import {
   ArrowLeft,
   Search,
-  Heart,
   Loader2,
   Check,
+  X,
+  Phone,
+  User as UserIcon,
 } from 'lucide-react';
 
 const storeCategories = ['All', 'Popular', 'New', 'Top'];
@@ -18,12 +20,23 @@ const storeCategories = ['All', 'Popular', 'New', 'Top'];
 interface StoreItem {
   id: string;
   name: string;
+  description: string | null;
   icon: string;
   color: string;
   category: string;
   price_coins: number;
+  is_active: number;
   redeemed: boolean;
   can_afford: boolean;
+  redemption: {
+    delivery_status: string;
+    redeemed_at: string;
+  } | null;
+}
+
+interface FlexyForm {
+  full_name: string;
+  phone_number: string;
 }
 
 export default function Store() {
@@ -34,6 +47,11 @@ export default function Store() {
   const [userCoins, setUserCoins] = useState(0);
   const [loading, setLoading] = useState(true);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
+
+  // Flexy form modal state
+  const [flexyItem, setFlexyItem] = useState<StoreItem | null>(null);
+  const [flexyForm, setFlexyForm] = useState<FlexyForm>({ full_name: '', phone_number: '' });
+  const [flexySubmitting, setFlexySubmitting] = useState(false);
 
   const loadStore = async () => {
     try {
@@ -59,7 +77,19 @@ export default function Store() {
     return matchesCategory && matchesSearch;
   });
 
-  const handleClaim = async (itemId: string) => {
+  // For the Flexy item — open form modal
+  const handleItemClick = (item: StoreItem) => {
+    if (item.redeemed || !item.can_afford || !item.is_active) return;
+    if (item.id === 'item-flexy') {
+      setFlexyItem(item);
+      setFlexyForm({ full_name: '', phone_number: '' });
+      return;
+    }
+    // For other items: direct redeem
+    handleDirectRedeem(item.id);
+  };
+
+  const handleDirectRedeem = async (itemId: string) => {
     if (redeemingId) return;
     setRedeemingId(itemId);
     try {
@@ -70,19 +100,15 @@ export default function Store() {
           description: `${(item?.price_coins ?? 0).toLocaleString()} coins deducted`,
           duration: 2500,
         });
-        // Reload store to get updated balance and redeemed state
         setLoading(true);
         await loadStore();
       }
     } catch (err: any) {
       const code = err?.code;
       if (code === 'INSUFFICIENT_COINS') {
-        const item = items.find((i) => i.id === itemId);
-        toast.error('Not enough coins', {
-          description: `You need ${(item?.price_coins ?? 0).toLocaleString()} coins to redeem this`,
-        });
+        toast.error('Not enough coins');
       } else if (code === 'ALREADY_REDEEMED') {
-        toast.error('Already redeemed', { description: 'You have already claimed this item' });
+        toast.error('Already redeemed');
       } else {
         toast.error(err?.message || 'Could not redeem item');
       }
@@ -91,11 +117,59 @@ export default function Store() {
     }
   };
 
+  const handleFlexySubmit = async () => {
+    if (!flexyItem) return;
+    if (!flexyForm.full_name.trim()) {
+      toast.error('Please enter your full name');
+      return;
+    }
+    if (!flexyForm.phone_number.trim()) {
+      toast.error('Please enter your phone number');
+      return;
+    }
+    setFlexySubmitting(true);
+    try {
+      const data = await apiFetch(`/v1/store/${flexyItem.id}/redeem`, {
+        method: 'POST',
+        body: JSON.stringify({
+          full_name: flexyForm.full_name.trim(),
+          phone_number: flexyForm.phone_number.trim(),
+        }),
+      });
+      if (data.success) {
+        setFlexyItem(null);
+        toast.success('Flexy redeemed! 🎉', {
+          description: data.data?.message || 'Your Flexy will be sent within 48 hours',
+          duration: 4000,
+        });
+        setLoading(true);
+        await loadStore();
+      }
+    } catch (err: any) {
+      const code = err?.code;
+      if (code === 'INSUFFICIENT_COINS') {
+        toast.error('Not enough coins', {
+          description: `You need ${(flexyItem?.price_coins ?? 0).toLocaleString()} coins`,
+        });
+      } else if (code === 'ALREADY_REDEEMED') {
+        toast.error('Already redeemed');
+        setFlexyItem(null);
+        setLoading(true);
+        await loadStore();
+      } else {
+        toast.error(err?.message || 'Could not redeem');
+      }
+    } finally {
+      setFlexySubmitting(false);
+    }
+  };
+
   return (
     <MobileContainer>
       <PageTransition>
       <Toaster position="top-center" />
       <div className="flex flex-col size-full bg-white">
+
         {/* Header */}
         <div className="px-5 pt-[env(safe-area-inset-top)]">
           <div className="flex items-center justify-between h-14">
@@ -130,9 +204,7 @@ export default function Store() {
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
                 className={`px-4 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap transition-all ${
-                  activeCategory === cat
-                    ? 'bg-[#14ae5c] text-white'
-                    : 'bg-gray-100 text-gray-500'
+                  activeCategory === cat ? 'bg-[#14ae5c] text-white' : 'bg-gray-100 text-gray-500'
                 }`}
               >
                 {cat}
@@ -159,24 +231,33 @@ export default function Store() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {filteredItems.map((item) => {
                 const isRedeeming = redeemingId === item.id;
+                const isComingSoon = !item.is_active;
 
                 return (
                   <div
                     key={item.id}
-                    className={`${item.color || 'bg-gray-50'} rounded-2xl p-4 flex flex-col items-center relative overflow-hidden`}
+                    className={`${item.color || 'bg-gray-50'} rounded-2xl p-4 flex flex-col items-center relative overflow-hidden ${isComingSoon ? 'opacity-60' : ''}`}
                   >
-                    {/* Favorite placeholder (visual only) */}
-                    <button className="absolute top-3 right-3">
-                      <Heart className="size-4 text-gray-300" />
-                    </button>
+                    {isComingSoon && (
+                      <div className="absolute top-2 right-2 bg-gray-400 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
+                        Soon
+                      </div>
+                    )}
 
                     {/* Icon */}
                     <div className="text-[40px] mb-3 mt-2">{item.icon}</div>
 
                     {/* Name */}
-                    <p className="text-[13px] font-semibold text-gray-800 text-center mb-2 leading-tight">
+                    <p className="text-[13px] font-semibold text-gray-800 text-center mb-1 leading-tight">
                       {item.name}
                     </p>
+
+                    {/* Description */}
+                    {item.description && (
+                      <p className="text-[10px] text-gray-400 text-center mb-2 leading-snug line-clamp-2">
+                        {item.description}
+                      </p>
+                    )}
 
                     {/* Price */}
                     <div className="flex items-center gap-1 text-[#f0a326] mb-3">
@@ -187,31 +268,48 @@ export default function Store() {
                     </div>
 
                     {/* Claim Button */}
-                    <button
-                      onClick={() => handleClaim(item.id)}
-                      disabled={item.redeemed || !item.can_afford || isRedeeming || redeemingId !== null}
-                      className={`w-full py-2 rounded-xl text-[12px] font-semibold transition-all active:scale-95 ${
-                        item.redeemed
-                          ? 'bg-gray-200 text-gray-500'
-                          : item.can_afford
-                          ? 'bg-[#14ae5c] text-white'
-                          : 'bg-gray-200 text-gray-400'
-                      }`}
-                    >
-                      {isRedeeming ? (
-                        <span className="flex items-center justify-center gap-1">
-                          <Loader2 className="size-3 animate-spin" /> Redeeming...
-                        </span>
-                      ) : item.redeemed ? (
-                        <span className="flex items-center justify-center gap-1">
-                          <Check className="size-3" /> Claimed
-                        </span>
-                      ) : item.can_afford ? (
-                        'Redeem'
-                      ) : (
-                        'Not enough coins'
-                      )}
-                    </button>
+                    {isComingSoon ? (
+                      <div className="w-full py-2 rounded-xl text-[12px] font-semibold bg-gray-200 text-gray-400 text-center">
+                        Coming Soon
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleItemClick(item)}
+                        disabled={item.redeemed || !item.can_afford || isRedeeming || redeemingId !== null}
+                        className={`w-full py-2 rounded-xl text-[12px] font-semibold transition-all active:scale-95 ${
+                          item.redeemed
+                            ? 'bg-gray-200 text-gray-500'
+                            : item.can_afford
+                            ? 'bg-[#14ae5c] text-white'
+                            : 'bg-gray-200 text-gray-400'
+                        }`}
+                      >
+                        {isRedeeming ? (
+                          <span className="flex items-center justify-center gap-1">
+                            <Loader2 className="size-3 animate-spin" /> Redeeming...
+                          </span>
+                        ) : item.redeemed ? (
+                          <span className="flex items-center justify-center gap-1">
+                            <Check className="size-3" /> Claimed
+                          </span>
+                        ) : item.can_afford ? (
+                          'Redeem'
+                        ) : (
+                          'Not enough coins'
+                        )}
+                      </button>
+                    )}
+
+                    {/* Delivery status badge for redeemed Flexy */}
+                    {item.redeemed && item.redemption?.delivery_status && (
+                      <p className="text-[10px] text-gray-400 mt-1.5 text-center">
+                        {item.redemption.delivery_status === 'pending'
+                          ? '⏳ Delivery pending (within 48h)'
+                          : item.redemption.delivery_status === 'delivered'
+                          ? '✅ Delivered'
+                          : item.redemption.delivery_status}
+                      </p>
+                    )}
                   </div>
                 );
               })}
@@ -221,6 +319,97 @@ export default function Store() {
 
         <BottomNav />
       </div>
+
+      {/* ── Flexy Redemption Form Modal ──────────────────────────────────── */}
+      {flexyItem && (
+        <div className="fixed inset-0 z-[70] flex items-end">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => !flexySubmitting && setFlexyItem(null)}
+          />
+
+          {/* Sheet */}
+          <div className="relative w-full bg-white rounded-t-3xl px-5 pt-6 pb-[calc(env(safe-area-inset-bottom)+24px)] animate-slide-up shadow-2xl">
+            {/* Handle */}
+            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+
+            {/* Close */}
+            <button
+              onClick={() => !flexySubmitting && setFlexyItem(null)}
+              className="absolute top-4 right-5 size-8 bg-gray-100 rounded-full flex items-center justify-center"
+              disabled={flexySubmitting}
+            >
+              <X className="size-4 text-gray-500" />
+            </button>
+
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-5">
+              <div className="bg-green-50 rounded-2xl p-3 text-[32px] leading-none">
+                {flexyItem.icon}
+              </div>
+              <div>
+                <h3 className="text-[17px] font-semibold text-gray-900">{flexyItem.name}</h3>
+                <div className="flex items-center gap-1 text-[#f0a326] mt-0.5">
+                  <div className="size-[14px] rounded-full border-[1.5px] border-[#f0a326] flex items-center justify-center">
+                    <span className="text-[6px] font-bold">$</span>
+                  </div>
+                  <span className="text-[13px] font-semibold">{flexyItem.price_coins.toLocaleString()} coins</span>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-[13px] text-gray-500 mb-5">
+              Enter your details below. Your Flexy credit will be sent within <strong>48 hours</strong>.
+            </p>
+
+            {/* Full Name */}
+            <div className="mb-4">
+              <label className="text-[12px] font-semibold text-gray-700 mb-1.5 block">Full Name *</label>
+              <div className="relative">
+                <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="e.g. Ahmed Benali"
+                  value={flexyForm.full_name}
+                  onChange={(e) => setFlexyForm((f) => ({ ...f, full_name: e.target.value }))}
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-10 pr-4 py-3 text-[14px] focus:border-[#14ae5c] focus:outline-none"
+                  disabled={flexySubmitting}
+                />
+              </div>
+            </div>
+
+            {/* Phone Number */}
+            <div className="mb-6">
+              <label className="text-[12px] font-semibold text-gray-700 mb-1.5 block">Mobile Number *</label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                <input
+                  type="tel"
+                  placeholder="e.g. 0770 000 000"
+                  value={flexyForm.phone_number}
+                  onChange={(e) => setFlexyForm((f) => ({ ...f, phone_number: e.target.value }))}
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-10 pr-4 py-3 text-[14px] focus:border-[#14ae5c] focus:outline-none"
+                  disabled={flexySubmitting}
+                />
+              </div>
+            </div>
+
+            {/* Submit */}
+            <button
+              onClick={handleFlexySubmit}
+              disabled={flexySubmitting || !flexyForm.full_name.trim() || !flexyForm.phone_number.trim()}
+              className="w-full bg-[#14ae5c] text-white py-4 rounded-2xl text-[15px] font-semibold flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.98] transition-transform"
+            >
+              {flexySubmitting ? (
+                <><Loader2 className="size-5 animate-spin" /> Processing...</>
+              ) : (
+                <><Check className="size-5" /> Confirm Redemption</>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
       </PageTransition>
     </MobileContainer>
   );
