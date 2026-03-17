@@ -162,7 +162,7 @@ export default function Leftovers() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto pb-24 px-5">
+        <div className="flex-1 overflow-y-auto pb-28 px-5">
           {activeTab === 'offers' && (
             <>
               {loading ? (

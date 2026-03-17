@@ -127,7 +127,7 @@ export default function Notifications() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto pb-24">
+        <div className="flex-1 overflow-y-auto pb-28">
           {!user ? (
             <div className="flex flex-col items-center justify-center py-20 px-6">
               <BellOff className="size-12 text-gray-300 mb-3" />

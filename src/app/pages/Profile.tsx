@@ -142,7 +142,7 @@ export default function Profile() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto pb-24">
+        <div className="flex-1 overflow-y-auto pb-28">
           {/* Guest prompt */}
           {isGuest && (
             <div className="mx-5 md:mx-8 mb-4 bg-gradient-to-r from-[#14ae5c] to-emerald-600 rounded-2xl p-4">

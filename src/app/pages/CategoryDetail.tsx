@@ -173,7 +173,7 @@ export default function CategoryDetail() {
         </div>
 
         {/* Posts */}
-        <div className="flex-1 overflow-y-auto pb-24 md:pb-28 px-5 md:px-8">
+        <div className="flex-1 overflow-y-auto pb-28 px-5 md:px-8">
           {loading ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="size-8 text-[#14ae5c] animate-spin" />

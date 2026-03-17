@@ -72,7 +72,6 @@ export default function BottomNav() {
           );
         })}
       </div>
-      <div className="mx-auto w-[134px] h-[4px] bg-black/80 rounded-full mb-1" />
     </div>
   );
 }

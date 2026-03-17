@@ -178,7 +178,7 @@ export default function Home() {
           </div>
 
           {/* Content */}
-          <PullToRefresh onRefresh={handleRefresh} className="pb-24 md:pb-28 px-5 md:px-8">
+          <PullToRefresh onRefresh={handleRefresh} className="pb-28 px-5 md:px-8">
             {showVerifyBanner && (
               <div className="mx-4 mb-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-4">
                 <div className="flex items-start justify-between">
