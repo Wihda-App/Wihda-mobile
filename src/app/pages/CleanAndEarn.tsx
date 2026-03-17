@@ -1,5 +1,6 @@
 import image_68006784dd90767bc6dc432709cdab530114952c from 'figma:asset/68006784dd90767bc6dc432709cdab530114952c.png'
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { useNavigate } from 'react-router';
 import MobileContainer from '../components/MobileContainer';
 import PageTransition from '../components/PageTransition';
@@ -47,6 +48,37 @@ export default function CleanAndEarn() {
   const fileInputBeforeRef = useRef<HTMLInputElement>(null);
   const fileInputAfterRef = useRef<HTMLInputElement>(null);
 
+  // Request notification permission and handle tap
+  useEffect(() => {
+    LocalNotifications.requestPermissions().catch(() => {});
+    const listener = LocalNotifications.addListener('localNotificationActionPerformed', () => {
+      navigate('/clean-and-earn');
+    });
+    return () => { listener.then(l => l.remove()); };
+  }, [navigate]);
+
+  // Auto-resume active submission on mount
+  useEffect(() => {
+    if (!user) return;
+    apiFetch('/v1/cleanify/submissions?status=active&limit=1')
+      .then((data) => {
+        if (!data.success) return;
+        const subs: any[] = data.data?.submissions ?? data.data ?? [];
+        const active = subs.find((s: any) =>
+          s.status === 'draft_before' || s.status === 'in_progress'
+        );
+        if (!active) return;
+        setSubmissionId(active.id);
+        if (active.status === 'in_progress') {
+          setBeforeUploadedAt(active.before_uploaded_at ? new Date(active.before_uploaded_at) : null);
+          setStep('upload-after');
+        } else {
+          setStep('upload-before');
+        }
+      })
+      .catch(() => {});
+  }, [user]);
+
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -68,6 +100,16 @@ export default function CleanAndEarn() {
       if (data.success) {
         setSubmissionId(data.data.id);
         setStep('upload-before');
+        // Schedule a local notification reminder
+        LocalNotifications.schedule({
+          notifications: [{
+            id: 1001,
+            title: 'Clean & Earn in progress 🧹',
+            body: 'Don\'t forget to take your after photo and earn coins!',
+            schedule: { at: new Date(Date.now() + 25 * 60 * 1000) }, // 25 min later
+            extra: { path: '/clean-and-earn' },
+          }],
+        }).catch(() => {});
       }
     } catch (err: any) {
       if (err.code === 'ACTIVE_SUBMISSION_EXISTS' || err.message?.includes('active submission')) {
@@ -195,6 +237,8 @@ export default function CleanAndEarn() {
       reader.onloadend = () => setAfterImage(reader.result as string);
       reader.readAsDataURL(file);
 
+      // Cancel the reminder notification since they completed the after photo
+      LocalNotifications.cancel({ notifications: [{ id: 1001 }] }).catch(() => {});
       setStep('validating');
       pollSubmissionStatus();
     } catch (err: any) {
