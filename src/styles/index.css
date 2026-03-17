@@ -5,19 +5,28 @@
 /* ===== NATIVE APP FEEL ===== */
 
 /* Prevent overscroll bounce */
-html, body {
-  overscroll-behavior: none;
-  overflow: hidden;
+html {
   height: 100%;
   width: 100%;
-  position: fixed;
+  overflow: hidden;
+  overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#root {
+body {
   height: 100%;
   width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  height: -webkit-fill-available;
   overflow: hidden;
 }
 

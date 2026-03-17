@@ -23,7 +23,7 @@
     }
   },
   "ios": {
-    "contentInset": "automatic"
+    "contentInset": "never"
   },
   "android": {
     "allowMixedContent": true,
