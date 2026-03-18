@@ -2,14 +2,18 @@ import { useEffect } from 'react';
 import { RouterProvider } from 'react-router';
 import { Toaster } from 'sonner';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { PushNotifications } from '@capacitor/push-notifications';
+import { Capacitor } from '@capacitor/core';
+import { apiFetch } from './lib/api';
 import { getRouter } from './routes';
 
 export default function App() {
   const router = getRouter();
 
   useEffect(() => {
+    // Local notifications (cleanify)
     LocalNotifications.requestPermissions().catch(() => {});
-    const listenerPromise = LocalNotifications.addListener(
+    const localListenerPromise = LocalNotifications.addListener(
       'localNotificationActionPerformed',
       (action: any) => {
         const extra = action.notification?.extra;
@@ -18,7 +22,46 @@ export default function App() {
         }
       }
     );
-    return () => { listenerPromise.then(l => l.remove()); };
+
+    // Push notifications (FCM — only on native iOS/Android)
+    let pushListeners: Promise<{ remove: () => void }>[] = [];
+    if (Capacitor.isNativePlatform()) {
+      PushNotifications.requestPermissions().then((result) => {
+        if (result.receive === 'granted') {
+          PushNotifications.register();
+        }
+      }).catch(() => {});
+
+      // Save FCM token to backend
+      const regListener = PushNotifications.addListener('registration', async (token) => {
+        try {
+          await apiFetch('/v1/profile', {
+            method: 'PATCH',
+            body: JSON.stringify({ fcm_token: token.value }),
+          });
+        } catch {}
+      });
+
+      // Handle notification tap (app in background / closed)
+      const actionListener = PushNotifications.addListener(
+        'pushNotificationActionPerformed',
+        (action: any) => {
+          const data = action.notification?.data;
+          if (data?.thread_id) {
+            router.navigate(`/chat/${data.thread_id}`);
+          } else if (data?.submissionId) {
+            router.navigate(`/cleanify-result/${data.submissionId}`);
+          }
+        }
+      );
+
+      pushListeners = [regListener, actionListener];
+    }
+
+    return () => {
+      localListenerPromise.then(l => l.remove());
+      pushListeners.forEach(p => p.then(l => l.remove()));
+    };
   }, []);
 
   return (

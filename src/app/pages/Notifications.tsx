@@ -89,6 +89,30 @@ export default function Notifications() {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  const handleNotifTap = async (notif: Notification) => {
+    // Mark as read
+    if (!notif.read) {
+      try {
+        await apiFetch('/v1/notifications/read', {
+          method: 'POST',
+          body: JSON.stringify({ notification_ids: [notif.id] }),
+        });
+        setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
+      } catch {}
+    }
+    // Navigate
+    const data = notif.data as any;
+    if (data?.thread_id) {
+      navigate(`/chat/${data.thread_id}`);
+    } else if (notif.type === 'new_message' && data?.thread_id) {
+      navigate(`/chat/${data.thread_id}`);
+    } else if (notif.type === 'leftover_request' && data?.thread_id) {
+      navigate(`/chat/${data.thread_id}`);
+    } else if (data?.submissionId) {
+      navigate(`/cleanify-result/${data.submissionId}`);
+    }
+  };
+
   const formatTime = (dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime();
     const mins = Math.floor(diff / 60000);
@@ -160,7 +184,8 @@ export default function Notifications() {
               {notifications.map((notif) => (
                 <div
                   key={notif.id}
-                  className={`flex items-start gap-3 px-5 py-4 ${!notif.read ? 'bg-green-50/30' : ''}`}
+                  onClick={() => handleNotifTap(notif)}
+                  className={`flex items-start gap-3 px-5 py-4 active:bg-gray-100 cursor-pointer ${!notif.read ? 'bg-green-50/30' : ''}`}
                 >
                   <div className={`${notifBg(notif.type)} rounded-full p-2.5 shrink-0 mt-0.5`}>
                     {notifIcon(notif.type)}
