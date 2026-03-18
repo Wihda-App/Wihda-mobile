@@ -21,6 +21,7 @@ import {
   ChevronRight,
   LogOut,
   Mail,
+  Lock,
 } from 'lucide-react';
 
 function randomCode(len = 6): string {
@@ -31,6 +32,7 @@ function randomCode(len = 6): string {
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
+      dir="ltr"
       onClick={() => onChange(!checked)}
       className={`relative inline-flex items-center h-7 w-12 rounded-full transition-colors duration-200 focus:outline-none ${checked ? 'bg-[#14ae5c]' : 'bg-gray-200'}`}
     >
@@ -253,7 +255,7 @@ export default function Settings() {
             </div>
 
             {/* Email */}
-            <div className="flex items-center gap-3 p-4">
+            <div className="flex items-center gap-3 p-4 border-b border-gray-100">
               <div className="flex-1">
                 <p className="text-[12px] text-gray-500 font-medium mb-0.5">{T('labelEmail')}</p>
                 <p className="text-[14px] text-gray-900 font-medium">{profile?.email || '—'}</p>
@@ -265,6 +267,16 @@ export default function Settings() {
                 <Mail className="size-3" /> {T('changeEmail')}
               </button>
             </div>
+
+            {/* Change Password */}
+            <button
+              onClick={() => navigate('/change-password')}
+              className="w-full flex items-center gap-3 p-4 active:bg-gray-50 transition-colors"
+            >
+              <Lock className="size-5 text-gray-500" />
+              <span className="flex-1 text-[14px] font-medium text-gray-800 text-left">{T('changePassword')}</span>
+              <ChevronRight className="size-4 text-gray-300" />
+            </button>
           </Row>
 
           {/* Appearance */}

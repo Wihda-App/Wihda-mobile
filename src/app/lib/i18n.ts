@@ -88,6 +88,13 @@ const translations = {
     confirmChange: 'Confirm Change',
     emailChanged: 'Email updated successfully',
     backToSettings: 'Back to Settings',
+    // Change password
+    changePassword: 'Change Password',
+    changePasswordTitle: 'Change Password',
+    currentPasswordLabel: 'Current Password',
+    newPasswordLabel: 'New Password',
+    confirmNewPassword: 'Confirm New Password',
+    passwordChanged: 'Password changed successfully',
     // Login page
     welcomeBack: 'Welcome back',
     signInToAccount: 'Sign in to your account',
@@ -285,6 +292,13 @@ const translations = {
     confirmChange: 'تأكيد التغيير',
     emailChanged: 'تم تحديث البريد الإلكتروني بنجاح',
     backToSettings: 'العودة للإعدادات',
+    // Change password
+    changePassword: 'تغيير كلمة المرور',
+    changePasswordTitle: 'تغيير كلمة المرور',
+    currentPasswordLabel: 'كلمة المرور الحالية',
+    newPasswordLabel: 'كلمة المرور الجديدة',
+    confirmNewPassword: 'تأكيد كلمة المرور الجديدة',
+    passwordChanged: 'تم تغيير كلمة المرور بنجاح',
     // Login page
     welcomeBack: 'مرحباً بعودتك',
     signInToAccount: 'سجّل الدخول إلى حسابك',
