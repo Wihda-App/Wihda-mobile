@@ -126,6 +126,11 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-body, inherit);
+  }
+
+  html[dir="rtl"] {
+    font-family: 'Tajawal', sans-serif;
   }
 
   /**

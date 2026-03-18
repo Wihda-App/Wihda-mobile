@@ -50,7 +50,7 @@ export interface AuthContextType {
   }>;
   signOut: () => void;
   refreshProfile: () => Promise<void>;
-  updateProfile: (updates: { name?: string; language?: string }) => Promise<{ error?: string }>;
+  updateProfile: (updates: { name?: string; language?: string; bio?: string }) => Promise<{ error?: string }>;
 }
 
 // ─── Context ───────────────────────────────────────────────────────────────────
@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           name: d.display_name,
           email: d.email ?? null,
           phone: d.phone ?? null,
-          bio: '',
+          bio: d.bio ?? '',
           location: d.neighborhood
             ? `${d.neighborhood.name}, ${d.neighborhood.city}`
             : '',
@@ -194,11 +194,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // ─── updateProfile ───────────────────────────────────────────────────────────
 
-  const updateProfile = async (updates: { name?: string; language?: string }) => {
+  const updateProfile = async (updates: { name?: string; language?: string; bio?: string }) => {
     try {
       const body: Record<string, string> = {};
       if (updates.name) body.display_name = updates.name;
       if (updates.language) body.language_preference = updates.language;
+      if (updates.bio !== undefined) body.bio = updates.bio;
 
       const data = await apiFetch('/v1/me', {
         method: 'PATCH',

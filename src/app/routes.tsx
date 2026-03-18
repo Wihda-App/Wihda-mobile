@@ -33,6 +33,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminPanel from "./pages/AdminPanel";
 import ActivityDetail from "./pages/ActivityDetail";
 import ActivityJoin from "./pages/ActivityJoin";
+import Settings from "./pages/Settings";
 
 let _router: ReturnType<typeof createBrowserRouter> | null = null;
 
@@ -115,6 +116,10 @@ export function getRouter() {
           {
             path: "edit-profile",
             Component: EditProfile,
+          },
+          {
+            path: "settings",
+            Component: Settings,
           },
           {
             path: "notifications",

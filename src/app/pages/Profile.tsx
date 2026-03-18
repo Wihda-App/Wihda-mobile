@@ -123,12 +123,12 @@ export default function Profile() {
             </button>
             <h1 className="text-[18px] font-semibold text-gray-900 font-[Poppins,sans-serif]">My Profile</h1>
             {!isGuest ? (
-              <button onClick={handleSignOut} className="text-gray-400" aria-label="Sign Out">
-                <LogOut className="size-5" />
+              <button onClick={() => navigate('/settings')} className="text-gray-500" aria-label="Settings">
+                <Settings className="size-5" />
               </button>
             ) : (
-              <button className="text-gray-800" aria-label="Settings">
-                <Settings className="size-5" />
+              <button onClick={() => navigate('/login')} className="text-gray-800" aria-label="Sign In">
+                <LogOut className="size-5" />
               </button>
             )}
           </div>
