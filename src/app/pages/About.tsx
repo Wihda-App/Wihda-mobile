@@ -107,7 +107,15 @@ export default function About() {
               </div>
               <div className="flex items-center gap-3">
                 <Phone className="size-4 text-[#14ae5c] shrink-0" />
-                <a href="tel:+213549599182" className="text-[13px] text-gray-600 dark:text-gray-300">+213 549 599 182</a>
+                <a
+                  href="https://wa.me/213549599182"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[13px] text-[#14ae5c] font-medium"
+                  dir="ltr"
+                >
+                  +213 549 599 182
+                </a>
               </div>
               <div className="flex items-center gap-3">
                 <Globe className="size-4 text-[#14ae5c] shrink-0" />
