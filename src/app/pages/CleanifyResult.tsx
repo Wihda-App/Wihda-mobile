@@ -5,7 +5,7 @@ import PageTransition from '../components/PageTransition';
 import SwipeBack from '../components/SwipeBack';
 import { apiFetch, API_BASE } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
-import { ArrowLeft, CheckCircle2, XCircle, Clock, Loader2, RotateCcw, Award } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle, Clock, Loader2, RotateCcw, Award, AlertTriangle } from 'lucide-react';
 
 interface SubmissionDetail {
   id: string;
@@ -27,8 +27,23 @@ export default function CleanifyResult() {
   const [submission, setSubmission] = useState<SubmissionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const attemptsRef = useRef(0);
+
+  const handleCancel = async () => {
+    if (!id) return;
+    setCancelling(true);
+    try {
+      await apiFetch(`/v1/cleanify/${id}/abandon`, { method: 'POST' });
+      if (pollRef.current) clearTimeout(pollRef.current);
+      navigate('/activities');
+    } catch {
+      setCancelling(false);
+      setShowCancelDialog(false);
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -128,9 +143,15 @@ export default function CleanifyResult() {
                   )}
                   <button
                     onClick={() => navigate('/activities')}
-                    className="w-full border border-gray-200 text-gray-500 py-3.5 rounded-2xl text-[14px] font-semibold active:scale-[0.98] transition-transform"
+                    className="w-full border border-gray-200 text-gray-500 py-3.5 rounded-2xl text-[14px] font-semibold active:scale-[0.98] transition-transform mb-3"
                   >
                     Back to Activities
+                  </button>
+                  <button
+                    onClick={() => setShowCancelDialog(true)}
+                    className="w-full border border-red-200 text-red-500 py-3.5 rounded-2xl text-[14px] font-semibold active:scale-[0.98] transition-transform"
+                  >
+                    Cancel Submission
                   </button>
                 </div>
               ) : submission.status === 'approved' ? (
@@ -261,6 +282,41 @@ export default function CleanifyResult() {
           </div>
         </SwipeBack>
       </PageTransition>
+
+      {/* Cancel Confirmation Dialog */}
+      {showCancelDialog && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center px-6">
+          <div className="absolute inset-0 bg-black/50" onClick={() => !cancelling && setShowCancelDialog(false)} />
+          <div className="relative bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl">
+            <div className="flex flex-col items-center text-center">
+              <div className="bg-red-50 rounded-full p-4 mb-4">
+                <AlertTriangle className="size-8 text-red-500" />
+              </div>
+              <h3 className="text-[18px] font-semibold text-gray-900 mb-2">Cancel Submission?</h3>
+              <p className="text-[13px] text-gray-500 mb-6 leading-relaxed">
+                This will permanently cancel your submission and remove it from the review queue. This action cannot be undone.
+              </p>
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setShowCancelDialog(false)}
+                  disabled={cancelling}
+                  className="flex-1 border border-gray-200 text-gray-600 py-3.5 rounded-2xl text-[14px] font-semibold active:scale-[0.98] transition-transform disabled:opacity-50"
+                >
+                  Keep it
+                </button>
+                <button
+                  onClick={handleCancel}
+                  disabled={cancelling}
+                  className="flex-1 bg-red-500 text-white py-3.5 rounded-2xl text-[14px] font-semibold active:scale-[0.98] transition-transform disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {cancelling ? <Loader2 className="size-4 animate-spin" /> : null}
+                  {cancelling ? 'Cancelling...' : 'Yes, Cancel'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </MobileContainer>
   );
 }
