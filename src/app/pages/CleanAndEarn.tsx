@@ -53,8 +53,13 @@ export default function CleanAndEarn() {
   // Request notification permission and handle tap
   useEffect(() => {
     LocalNotifications.requestPermissions().catch(() => {});
-    const listener = LocalNotifications.addListener('localNotificationActionPerformed', () => {
-      navigate('/clean-and-earn');
+    const listener = LocalNotifications.addListener('localNotificationActionPerformed', (action: any) => {
+      const extra = action.notification?.extra;
+      if (extra?.submissionId) {
+        navigate(`/cleanify-result/${extra.submissionId}`);
+      } else {
+        navigate('/clean-earn');
+      }
     });
     return () => { listener.then(l => l.remove()); };
   }, [navigate]);
@@ -128,8 +133,8 @@ export default function CleanAndEarn() {
             id: 1001,
             title: 'Clean & Earn in progress 🧹',
             body: 'Don\'t forget to take your after photo and earn coins!',
-            schedule: { at: new Date(Date.now() + 25 * 60 * 1000) }, // 25 min later
-            extra: { path: '/clean-and-earn' },
+            schedule: { at: new Date(Date.now() + 25 * 60 * 1000) },
+            extra: { submissionId: data.data.submission_id },
           }],
         }).catch(() => {});
       }
@@ -375,43 +380,78 @@ const stepNumber = (step === 'intro' || step === 'checking' || step === 'active-
           {/* ── Active Submission Exists ── */}
           {step === 'active-exists' && (
             <div className="flex flex-col items-center pt-12 px-2">
-              <div className="bg-orange-50 rounded-3xl p-6 mb-5">
-                <Clock className="size-14 text-orange-400" />
-              </div>
-              <h2 className="text-[21px] font-semibold text-gray-900 mb-2 text-center">Unfinished Session</h2>
-              <p className="text-gray-500 text-[14px] text-center mb-8 px-4">
-                You have a Clean & Earn session in progress. Would you like to continue where you left off?
-              </p>
-
-              <div className="w-full bg-orange-50 border border-orange-100 rounded-2xl p-4 mb-8">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className={`size-2 rounded-full ${activeSubmission?.status === 'in_progress' ? 'bg-green-500' : 'bg-orange-400'}`} />
-                  <p className="text-[13px] font-semibold text-gray-700">
-                    {activeSubmission?.status === 'in_progress' ? 'Before photo uploaded — waiting for after photo' : 'Before photo not yet uploaded'}
+              {activeSubmission?.status === 'pending_review' ? (
+                <>
+                  <div className="bg-blue-50 rounded-3xl p-6 mb-5">
+                    <Loader2 className="size-14 text-blue-400 animate-spin" />
+                  </div>
+                  <h2 className="text-[21px] font-semibold text-gray-900 mb-2 text-center">Under Review</h2>
+                  <p className="text-gray-500 text-[14px] text-center mb-8 px-4">
+                    Your previous submission is still under review. Please wait for the result before starting a new one.
                   </p>
-                </div>
-                {activeSubmission?.before_uploaded_at && (
-                  <p className="text-[12px] text-gray-400 mt-1 pl-4">
-                    Started {new Date(activeSubmission.before_uploaded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  <div className="w-full bg-blue-50 border border-blue-100 rounded-2xl p-4 mb-8">
+                    <div className="flex items-center gap-2">
+                      <div className="size-2 rounded-full bg-blue-400 animate-pulse" />
+                      <p className="text-[13px] font-semibold text-blue-700">
+                        AI is reviewing your photos
+                      </p>
+                    </div>
+                    <p className="text-[12px] text-gray-400 mt-1 pl-4">You'll receive a notification when done</p>
+                  </div>
+                  <button
+                    onClick={() => navigate(`/cleanify-result/${activeSubmission.id}`)}
+                    className="w-full bg-blue-500 text-white py-4 rounded-2xl text-[15px] font-semibold active:scale-[0.98] transition-transform flex items-center justify-center gap-2 mb-3"
+                  >
+                    <ArrowRight className="size-5" /> View Submission Status
+                  </button>
+                  <button
+                    onClick={() => navigate('/activities')}
+                    className="w-full text-gray-400 text-[14px] py-2 active:scale-[0.98] transition-transform"
+                  >
+                    Back to Activities
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="bg-orange-50 rounded-3xl p-6 mb-5">
+                    <Clock className="size-14 text-orange-400" />
+                  </div>
+                  <h2 className="text-[21px] font-semibold text-gray-900 mb-2 text-center">Unfinished Session</h2>
+                  <p className="text-gray-500 text-[14px] text-center mb-8 px-4">
+                    You have a Clean & Earn session in progress. Would you like to continue where you left off?
                   </p>
-                )}
-              </div>
 
-              <div className="flex flex-col gap-3 w-full">
-                <button
-                  onClick={resumeActiveSubmission}
-                  className="w-full bg-[#14ae5c] text-white py-4 rounded-2xl text-[15px] font-semibold active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
-                >
-                  <ArrowRight className="size-5" /> Continue Session
-                </button>
-                <button
-                  onClick={abandonActiveSubmission}
-                  disabled={loading}
-                  className="w-full bg-red-500 text-white py-4 rounded-2xl text-[15px] font-semibold active:scale-[0.98] transition-transform flex items-center justify-center gap-2 disabled:opacity-60"
-                >
-                  {loading ? <Loader2 className="size-5 animate-spin" /> : 'Abandon & Start New'}
-                </button>
-              </div>
+                  <div className="w-full bg-orange-50 border border-orange-100 rounded-2xl p-4 mb-8">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className={`size-2 rounded-full ${activeSubmission?.status === 'in_progress' ? 'bg-green-500' : 'bg-orange-400'}`} />
+                      <p className="text-[13px] font-semibold text-gray-700">
+                        {activeSubmission?.status === 'in_progress' ? 'Before photo uploaded — waiting for after photo' : 'Before photo not yet uploaded'}
+                      </p>
+                    </div>
+                    {activeSubmission?.before_uploaded_at && (
+                      <p className="text-[12px] text-gray-400 mt-1 pl-4">
+                        Started {new Date(activeSubmission.before_uploaded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-3 w-full">
+                    <button
+                      onClick={resumeActiveSubmission}
+                      className="w-full bg-[#14ae5c] text-white py-4 rounded-2xl text-[15px] font-semibold active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
+                    >
+                      <ArrowRight className="size-5" /> Continue Session
+                    </button>
+                    <button
+                      onClick={abandonActiveSubmission}
+                      disabled={loading}
+                      className="w-full bg-red-500 text-white py-4 rounded-2xl text-[15px] font-semibold active:scale-[0.98] transition-transform flex items-center justify-center gap-2 disabled:opacity-60"
+                    >
+                      {loading ? <Loader2 className="size-5 animate-spin" /> : 'Abandon & Start New'}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
 

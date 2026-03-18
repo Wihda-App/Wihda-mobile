@@ -27,6 +27,8 @@ import MyImpact from "./pages/MyImpact";
 import MyBadges from "./pages/MyBadges";
 import About from "./pages/About";
 import Terms from "./pages/Terms";
+import CleanifyHistory from "./pages/CleanifyHistory";
+import CleanifyResult from "./pages/CleanifyResult";
 
 let _router: ReturnType<typeof createBrowserRouter> | null = null;
 
@@ -72,6 +74,14 @@ export function getRouter() {
           {
             path: "clean-earn",
             Component: CleanAndEarn,
+          },
+          {
+            path: "cleanify-history",
+            Component: CleanifyHistory,
+          },
+          {
+            path: "cleanify-result/:id",
+            Component: CleanifyResult,
           },
           {
             path: "store",

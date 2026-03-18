@@ -25,6 +25,7 @@ import {
   Bell,
   Camera,
   Loader2,
+  Leaf,
 } from 'lucide-react';
 
 
@@ -236,6 +237,22 @@ export default function Profile() {
               <StatCard icon={Clock} label="Volunteer" value="0h" color="text-purple-500" bg="bg-purple-50" />
             </div>
           </div>
+
+          {/* Quick Links */}
+          {!isGuest && (
+            <div className="px-5 md:px-8 mb-5">
+              <button
+                onClick={() => navigate('/cleanify-history')}
+                className="w-full flex items-center gap-3 bg-gray-50 rounded-2xl px-4 py-3.5 active:bg-gray-100 transition-colors"
+              >
+                <div className="bg-green-50 rounded-xl p-2 shrink-0">
+                  <Leaf className="size-5 text-[#14ae5c]" />
+                </div>
+                <span className="flex-1 text-[14px] font-medium text-gray-800 text-left">Clean & Earn History</span>
+                <ChevronRight className="size-4 text-gray-400 shrink-0" />
+              </button>
+            </div>
+          )}
 
           {/* Coins Balance */}
           <div className="px-5 md:px-8 mb-5">
