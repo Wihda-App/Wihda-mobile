@@ -184,11 +184,11 @@ export async function apiUpload(path: string, formData: FormData): Promise<any> 
 
 export async function uploadToPresignedUrl(uploadUrl: string, file: File): Promise<void> {
   const res = await fetch(uploadUrl, {
-    method: 'PUT',
+    method: 'POST',
     headers: { 'Content-Type': file.type },
     body: file,
   });
   if (!res.ok) {
-    throw new Error(`Upload to presigned URL failed: ${res.status}`);
+    throw new Error(`Upload failed: ${res.status}`);
   }
 }
