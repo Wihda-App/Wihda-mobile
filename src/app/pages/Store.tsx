@@ -5,6 +5,23 @@ import BottomNav from '../components/BottomNav';
 import PageTransition from '../components/PageTransition';
 import { apiFetch } from '../lib/api';
 import { toast, Toaster } from 'sonner';
+import imgCats       from '../../assets/cats.png';
+import imgPlant      from '../../assets/plant.png';
+import imgEvent      from '../../assets/event.png';
+import imgEco        from '../../assets/eco-friendly.png';
+import imgBadges     from '../../assets/badges.png';
+import imgDonation   from '../../assets/donation.png';
+import imgFlexy      from '../../assets/flexy.png';
+
+const ITEM_IMAGES: Record<string, string> = {
+  'item-1':    imgCats,
+  'item-2':    imgPlant,
+  'item-3':    imgEvent,
+  'item-4':    imgEco,
+  'item-5':    imgBadges,
+  'item-6':    imgDonation,
+  'item-flexy': imgFlexy,
+};
 import {
   ArrowLeft,
   Search,
@@ -245,7 +262,13 @@ export default function Store() {
                     )}
 
                     {/* Icon */}
-                    <div className="text-[40px] mb-3 mt-2">{item.icon || '🎁'}</div>
+                    <div className="mb-3 mt-2 size-16 flex items-center justify-center">
+                      {ITEM_IMAGES[item.id] ? (
+                        <img src={ITEM_IMAGES[item.id]} alt={item.name} className="size-16 object-contain" />
+                      ) : (
+                        <span className="text-[40px]">{item.icon || '🎁'}</span>
+                      )}
+                    </div>
 
                     {/* Name */}
                     <p className="text-[13px] font-semibold text-gray-800 text-center mb-1 leading-tight">
@@ -345,8 +368,12 @@ export default function Store() {
 
             {/* Header */}
             <div className="flex items-center gap-3 mb-5">
-              <div className="bg-green-50 rounded-2xl p-3 text-[32px] leading-none">
-                {flexyItem.icon || '🎁'}
+              <div className="bg-green-50 rounded-2xl p-3 flex items-center justify-center size-16">
+                {ITEM_IMAGES[flexyItem.id] ? (
+                  <img src={ITEM_IMAGES[flexyItem.id]} alt={flexyItem.name} className="size-10 object-contain" />
+                ) : (
+                  <span className="text-[32px] leading-none">{flexyItem.icon || '🎁'}</span>
+                )}
               </div>
               <div>
                 <h3 className="text-[17px] font-semibold text-gray-900">{flexyItem.name}</h3>
