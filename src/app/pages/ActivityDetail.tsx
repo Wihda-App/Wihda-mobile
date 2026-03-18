@@ -210,25 +210,25 @@ export default function ActivityDetail() {
       <PageTransition>
         <div className="flex flex-col size-full bg-gray-50">
 
-          {/* Floating header over image */}
-          <div className="absolute top-0 left-0 right-0 z-10 px-4 pt-[env(safe-area-inset-top)]">
+          {/* Header — sits above image, respects safe area */}
+          <div className="shrink-0 px-4 pt-[env(safe-area-inset-top)] bg-transparent absolute top-0 left-0 right-0 z-10">
             <div className="flex items-center justify-between h-14">
               <button
                 onClick={() => navigate(-1)}
-                className="size-9 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center"
+                className="size-9 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center"
               >
                 <ArrowLeft className="size-5 text-white" />
               </button>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setIsFav(f => !f)}
-                  className="size-9 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center"
+                  className="size-9 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center"
                 >
                   <Heart className={`size-4 transition-colors ${isFav ? 'fill-red-500 text-red-500' : 'text-white'}`} />
                 </button>
                 <button
                   onClick={() => navigate('/notifications')}
-                  className="size-9 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center relative"
+                  className="size-9 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center relative"
                 >
                   <Bell className="size-4 text-white" />
                   <div className="absolute top-1.5 right-1.5 size-1.5 bg-red-500 rounded-full" />
@@ -237,8 +237,8 @@ export default function ActivityDetail() {
             </div>
           </div>
 
-          {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto pb-36">
+          {/* Scrollable content — image starts below safe area */}
+          <div className="flex-1 overflow-y-auto pb-36 pt-[env(safe-area-inset-top)]">
 
             {/* Image */}
             <div className="relative">
