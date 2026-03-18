@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             ? `${d.neighborhood.name}, ${d.neighborhood.city}`
             : '',
           neighborhood: d.neighborhood ?? null,
-          photoUrl: '',
+          photoUrl: d.photo_url ?? '',
           coins: d.coin_balance ?? 0,
           role: d.role,
           verificationStatus: d.verification_status,
