@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import wihdaLogo from '../../assets/wihda_logo.png';
+import imgWihdaTextLogo1 from "figma:asset/ee118e5efe643d9ee6880fd61bb3d74d5253e1aa.png";
 import { getStoredToken } from '../lib/api';
 
 export default function SplashPage() {
@@ -67,13 +67,22 @@ export default function SplashPage() {
           </div>
 
           <div className="relative z-10 flex flex-col items-center">
+            {/* Animated dot */}
+            <div
+              className="size-6 rounded-full bg-[#52ADE5] mb-4 transition-all duration-700"
+              style={{
+                transform: phase === 'enter' ? 'translateY(-20px) scale(0)' : 'translateY(0) scale(1)',
+                opacity: phase === 'enter' ? 0 : 1,
+              }}
+            />
+
             {/* Logo */}
             <img
-              src={wihdaLogo}
+              src={imgWihdaTextLogo1}
               alt="Wihda"
-              className="w-[200px] object-contain transition-all duration-700"
+              className="w-[260px] object-contain transition-all duration-700 delay-200"
               style={{
-                transform: phase === 'enter' ? 'translateY(20px) scale(0.9)' : 'translateY(0) scale(1)',
+                transform: phase === 'enter' ? 'translateY(20px)' : 'translateY(0)',
                 opacity: phase === 'enter' ? 0 : 1,
               }}
             />

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import wihdaLogo from '../../assets/wihda_logo.png';
 import {
   Menu,
   ShoppingBag,
@@ -99,16 +98,9 @@ export default function Header({
             </div>
           </div>
 
-          {/* Center — logo */}
-          <img
-            src={wihdaLogo}
-            alt="Wihda"
-            className="h-9 w-auto object-contain absolute left-1/2 -translate-x-1/2"
-          />
-
           {/* Right side — menu */}
           <button
-            className="text-gray-800 dark:text-gray-200"
+            className="text-gray-800"
             aria-label="Menu"
             onClick={() => setSidebarOpen(true)}
           >
@@ -140,13 +132,8 @@ export default function Header({
               <X className="size-6" />
             </button>
 
-            {/* Sidebar logo */}
-            <div className="pt-[env(safe-area-inset-top)] px-5 pb-2 mt-2 flex items-center">
-              <img src={wihdaLogo} alt="Wihda" className="h-10 w-auto object-contain" />
-            </div>
-
             {/* Profile section */}
-            <div className="px-5 pb-5 bg-gradient-to-b from-[#f0faf4] to-white dark:from-gray-800 dark:to-gray-900">
+            <div className="pt-[env(safe-area-inset-top)] px-5 pb-5 bg-gradient-to-b from-[#f0faf4] to-white dark:from-gray-800 dark:to-gray-900 mt-12">
               <div className="flex items-center gap-3">
                 {profile?.photoUrl ? (
                   <img src={profile.photoUrl} alt="Profile" className="size-12 rounded-full object-cover" />
