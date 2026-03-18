@@ -279,6 +279,10 @@ export default function Home() {
                           time={getRelativeTime(offer.created_at)}
                           coins={0}
                           image=""
+                          Icon={Utensils}
+                          iconBg="bg-orange-50"
+                          iconColor="text-orange-400"
+                          onClick={() => navigate('/category/leftovers')}
                         />
                       ))
                     ) : (
@@ -289,6 +293,10 @@ export default function Home() {
                           time="1hr ago"
                           coins={100}
                           image="https://images.unsplash.com/photo-1661509833506-266e183dbe6c?w=200&h=200&fit=crop"
+                          Icon={Utensils}
+                          iconBg="bg-orange-50"
+                          iconColor="text-orange-400"
+                          onClick={() => navigate('/category/leftovers')}
                         />
                         <RecentPostCard
                           name="Sara M."
@@ -296,6 +304,10 @@ export default function Home() {
                           time="3hr ago"
                           coins={80}
                           image={babyClothesImg}
+                          Icon={Package}
+                          iconBg="bg-blue-50"
+                          iconColor="text-blue-400"
+                          onClick={() => navigate('/category/old-items')}
                         />
                       </>
                     )}
@@ -409,20 +421,31 @@ function getRelativeTime(dateStr: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-function RecentPostCard({ name, item, time, coins, image }: {
+function RecentPostCard({ name, item, time, coins, image, Icon, iconBg, iconColor, onClick }: {
   name: string;
   item: string;
   time: string;
   coins: number;
   image: string;
+  Icon?: React.ElementType;
+  iconBg?: string;
+  iconColor?: string;
+  onClick?: () => void;
 }) {
+  const FallbackIcon = Icon || Utensils;
+  const bg = iconBg || 'bg-orange-50';
+  const color = iconColor || 'text-orange-400';
+
   return (
-    <div className="min-w-[200px] md:min-w-[240px] bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm active:scale-95 transition-all duration-150">
+    <div
+      onClick={onClick}
+      className={`min-w-[200px] md:min-w-[240px] bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm active:scale-95 transition-all duration-150 ${onClick ? 'cursor-pointer' : ''}`}
+    >
       {image ? (
         <ImageWithFallback src={image} alt={item} className="w-full h-[100px] object-cover" />
       ) : (
-        <div className="w-full h-[100px] bg-gray-100 flex items-center justify-center">
-          <Utensils className="size-8 text-gray-300" />
+        <div className={`w-full h-[100px] ${bg} flex items-center justify-center`}>
+          <FallbackIcon className={`size-10 ${color}`} />
         </div>
       )}
       <div className="p-3">
