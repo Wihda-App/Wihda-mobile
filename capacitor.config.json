@@ -10,8 +10,7 @@
       "launchShowDuration": 0
     },
     "StatusBar": {
-      "style": "LIGHT",
-      "backgroundColor": "#14ae5c"
+      "style": "LIGHT"
     },
     "Keyboard": {
       "resize": "body",

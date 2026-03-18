@@ -12,10 +12,12 @@ export default function App() {
   const router = getRouter();
 
   useEffect(() => {
-    // Status bar — transparent, draws behind app content (edge-to-edge)
+    // Status bar — solid color matching app theme (no overlay)
     if (Capacitor.isNativePlatform()) {
-      StatusBar.setOverlaysWebView({ overlay: true }).catch(() => {});
-      StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
+      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
+      StatusBar.setBackgroundColor({ color: isDark ? '#111827' : '#14ae5c' }).catch(() => {});
+      StatusBar.setStyle({ style: Style.Light }).catch(() => {});
     }
 
     // Local notifications (cleanify)
