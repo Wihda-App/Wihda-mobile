@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 import MobileContainer from '../components/MobileContainer';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/AuthContext';
-import { apiFetch, apiUpload } from '../lib/api';
+import { apiFetch, uploadToPresignedUrl } from '../lib/api';
 import {
   ArrowLeft,
   Camera,
@@ -69,10 +69,17 @@ export default function PostItem() {
   const uploadFirstImage = async (): Promise<string | undefined> => {
     if (imageFiles.length === 0) return undefined;
     try {
-      const fd = new FormData();
-      fd.append('file', imageFiles[0]);
-      const res = await apiUpload('/v1/media/upload', fd);
-      return res?.data?.url as string | undefined;
+      const file = imageFiles[0];
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace('jpeg', 'jpg');
+      const safeExt = ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext) ? ext : 'jpg';
+      // Step 1: get presigned upload URL
+      const presigned = await apiFetch('/v1/uploads/presigned-url', {
+        method: 'POST',
+        body: JSON.stringify({ content_type: 'leftover_image', file_extension: safeExt }),
+      });
+      // Step 2: PUT file bytes directly to the signed URL
+      await uploadToPresignedUrl(presigned.data.upload_url, file);
+      return presigned.data.file_url as string;
     } catch (err) {
       console.warn('Image upload failed, continuing without image:', err);
       return undefined;

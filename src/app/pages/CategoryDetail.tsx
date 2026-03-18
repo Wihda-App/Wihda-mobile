@@ -118,6 +118,17 @@ export default function CategoryDetail() {
     }
   };
 
+  const handleOfferHelp = async (needId: string) => {
+    try {
+      const data = await apiFetch(`/v1/leftovers/needs/${needId}/request`, { method: 'POST' });
+      if (data.success) {
+        navigate(`/chat/${data.data.thread_id}`);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to start chat');
+    }
+  };
+
   const handleDeleteOffer = async (offerId: string) => {
     try {
       await apiFetch(`/v1/leftovers/offers/${offerId}`, { method: 'DELETE' });
@@ -249,6 +260,7 @@ export default function CategoryDetail() {
                   navigate={navigate}
                   isOwner={user?.id === need.user_id}
                   onDelete={() => handleDeleteNeed(need.id)}
+                  onOfferHelp={() => handleOfferHelp(need.id)}
                 />
               ))}
             </div>
@@ -357,11 +369,12 @@ function PostCard({ post, navigate, isFavorited, onFavorite, isOwner, onRequest,
   );
 }
 
-function RequestCard({ post, navigate, isOwner, onDelete }: {
+function RequestCard({ post, navigate, isOwner, onDelete, onOfferHelp }: {
   post: any;
   navigate: any;
   isOwner: boolean;
   onDelete: () => void;
+  onOfferHelp: () => void;
 }) {
   const userName = post.user?.display_name || 'Neighbor';
   const timeAgo = getRelativeTime(post.created_at);
@@ -397,7 +410,7 @@ function RequestCard({ post, navigate, isOwner, onDelete }: {
           </div>
         ) : (
           <button
-            onClick={() => navigate('/post-item/leftovers')}
+            onClick={onOfferHelp}
             className="bg-[#14ae5c] text-white px-4 py-2 rounded-full text-[12px] font-semibold active:scale-95 transition-transform"
           >
             Offer to Help
