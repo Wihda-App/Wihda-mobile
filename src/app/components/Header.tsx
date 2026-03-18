@@ -15,6 +15,7 @@ import {
   FileText,
   Info,
   Home as HomeIcon,
+  Leaf,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -28,6 +29,7 @@ const menuItems = [
   { label: 'My Listings', path: '/my-listings', Icon: Package },
   { label: 'My Impact', path: '/my-impact', Icon: Flame },
   { label: 'My Badges', path: '/my-badges', Icon: Award },
+  { label: 'Clean & Earn History', path: '/cleanify-history', Icon: Leaf },
   { label: 'Profile', path: '/profile', Icon: User },
   { label: 'Notifications', path: '/notifications', Icon: Bell },
 ];
@@ -114,7 +116,7 @@ export default function Header({
 
       {/* Sidebar overlay */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end">
+        <div className="fixed inset-0 z-[70] flex justify-end">
           {/* Backdrop */}
           <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
 
