@@ -7,11 +7,7 @@
   },
   "plugins": {
     "SplashScreen": {
-      "launchShowDuration": 2000,
-      "backgroundColor": "#14ae5c",
-      "showSpinner": false,
-      "androidSplashResourceName": "splash",
-      "androidScaleType": "CENTER_CROP"
+      "launchShowDuration": 0
     },
     "StatusBar": {
       "style": "LIGHT",
