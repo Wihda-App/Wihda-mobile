@@ -34,7 +34,10 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
       onClick={() => onChange(!checked)}
       className={`relative inline-flex items-center h-7 w-12 rounded-full transition-colors duration-200 focus:outline-none ${checked ? 'bg-[#14ae5c]' : 'bg-gray-200'}`}
     >
-      <span className={`inline-block size-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${checked ? 'translate-x-6' : 'translate-x-1'}`} />
+      <span
+        className={`inline-block size-5 rounded-full shadow-sm transition-transform duration-200 ${checked ? 'translate-x-6' : 'translate-x-1'}`}
+        style={{ backgroundColor: 'white' }}
+      />
     </button>
   );
 }

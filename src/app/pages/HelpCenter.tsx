@@ -4,46 +4,83 @@ import MobileContainer from '../components/MobileContainer';
 import PageTransition from '../components/PageTransition';
 import { ArrowLeft, ChevronDown, ChevronUp, Mail, MessageSquare } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { t } from '../lib/i18n';
+import { t, Lang } from '../lib/i18n';
 
-const faqs = [
-  {
-    category: 'Using the App',
-    questions: [
-      { q: 'How do I post an item?', a: 'Go to any category from the Home screen, tap the + button, fill in the details and submit. Make sure your account is verified to post.' },
-      { q: 'How do I join a neighborhood?', a: 'Tap the location button at the top of the Home screen, find your neighborhood on the map, and tap Join.' },
-      { q: 'Why do I need to verify my identity?', a: 'Verification helps build trust in the community. Verified users can post items, request exchanges, and interact with neighbors.' },
-    ],
-  },
-  {
-    category: 'Exchanges',
-    questions: [
-      { q: 'How does matching work?', a: "When you post an offer or a need, our system automatically matches you with compatible neighbors. You'll be notified when a match is found." },
-      { q: 'How do I confirm an exchange?', a: 'Open the chat with your match, then tap "I gave / received the item" once the exchange is done. The other party must confirm within 5 minutes.' },
-      { q: "What happens if an exchange doesn't work out?", a: 'You can cancel from the chat at any time before confirming. No coins are deducted for cancelled exchanges.' },
-    ],
-  },
-  {
-    category: 'Coins',
-    questions: [
-      { q: 'How do I earn coins?', a: 'You earn coins by completing exchanges (200 coins as giver, 50 as receiver), completing Clean & Earn tasks (150 coins), and other community activities.' },
-      { q: 'How do I redeem coins?', a: 'Visit the Rewards Store from the Home screen. Browse available rewards, check if you have enough coins, and tap Redeem.' },
-      { q: 'Do coins expire?', a: 'No, your earned coins never expire. They stay in your account until you use them.' },
-    ],
-  },
-  {
-    category: 'Neighborhood Features',
-    questions: [
-      { q: 'Can I be in multiple neighborhoods?', a: 'Currently you can be a member of one primary neighborhood. Neighborhoods are defined by geographic boundaries.' },
-      { q: 'How do I create a new neighborhood?', a: 'In the Choose Location screen, switch to "Create" mode, draw the neighborhood boundary on the map, fill in the name and details, then submit.' },
-      { q: 'Who can see posts in my neighborhood?', a: 'Posts are visible to all members of the same neighborhood, creating a trusted local community.' },
-    ],
-  },
-];
+const faqsData: Record<Lang, { category: string; questions: { q: string; a: string }[] }[]> = {
+  en: [
+    {
+      category: 'Using the App',
+      questions: [
+        { q: 'How do I post an item?', a: 'Go to any category from the Home screen, tap the + button, fill in the details and submit. Make sure your account is verified to post.' },
+        { q: 'How do I join a neighborhood?', a: 'Tap the location button at the top of the Home screen, find your neighborhood on the map, and tap Join.' },
+        { q: 'Why do I need to verify my identity?', a: 'Verification helps build trust in the community. Verified users can post items, request exchanges, and interact with neighbors.' },
+      ],
+    },
+    {
+      category: 'Exchanges',
+      questions: [
+        { q: 'How does matching work?', a: "When you post an offer or a need, our system automatically matches you with compatible neighbors. You'll be notified when a match is found." },
+        { q: 'How do I confirm an exchange?', a: 'Open the chat with your match, then tap "I gave / received the item" once the exchange is done. The other party must confirm within 5 minutes.' },
+        { q: "What happens if an exchange doesn't work out?", a: 'You can cancel from the chat at any time before confirming. No coins are deducted for cancelled exchanges.' },
+      ],
+    },
+    {
+      category: 'Coins',
+      questions: [
+        { q: 'How do I earn coins?', a: 'You earn coins by completing exchanges (200 coins as giver, 50 as receiver), completing Clean & Earn tasks (150 coins), and other community activities.' },
+        { q: 'How do I redeem coins?', a: 'Visit the Rewards Store from the Home screen. Browse available rewards, check if you have enough coins, and tap Redeem.' },
+        { q: 'Do coins expire?', a: 'No, your earned coins never expire. They stay in your account until you use them.' },
+      ],
+    },
+    {
+      category: 'Neighborhood Features',
+      questions: [
+        { q: 'Can I be in multiple neighborhoods?', a: 'Currently you can be a member of one primary neighborhood. Neighborhoods are defined by geographic boundaries.' },
+        { q: 'How do I create a new neighborhood?', a: 'In the Choose Location screen, switch to "Create" mode, draw the neighborhood boundary on the map, fill in the name and details, then submit.' },
+        { q: 'Who can see posts in my neighborhood?', a: 'Posts are visible to all members of the same neighborhood, creating a trusted local community.' },
+      ],
+    },
+  ],
+  ar: [
+    {
+      category: 'استخدام التطبيق',
+      questions: [
+        { q: 'كيف أنشر عنصراً؟', a: 'اذهب إلى أي فئة من الشاشة الرئيسية، اضغط على زر +، أدخل التفاصيل وأرسل. تأكد من أن حسابك موثّق للنشر.' },
+        { q: 'كيف أنضم إلى حي؟', a: 'اضغط على زر الموقع في أعلى الشاشة الرئيسية، ابحث عن حيك على الخريطة واضغط انضمام.' },
+        { q: 'لماذا أحتاج إلى التحقق من هويتي؟', a: 'التحقق يساعد على بناء الثقة في المجتمع. يمكن للمستخدمين الموثّقين نشر العناصر وطلب التبادلات والتفاعل مع الجيران.' },
+      ],
+    },
+    {
+      category: 'التبادلات',
+      questions: [
+        { q: 'كيف تعمل المطابقة؟', a: 'عندما تنشر عرضاً أو طلباً، يقوم نظامنا تلقائياً بمطابقتك مع الجيران المتوافقين. ستتلقى إشعاراً عند العثور على مطابقة.' },
+        { q: 'كيف أؤكد التبادل؟', a: 'افتح المحادثة مع مطابقتك، ثم اضغط "أعطيت / استلمت العنصر" بعد اكتمال التبادل. يجب على الطرف الآخر التأكيد خلال 5 دقائق.' },
+        { q: 'ماذا يحدث إذا لم ينجح التبادل؟', a: 'يمكنك الإلغاء من المحادثة في أي وقت قبل التأكيد. لا تُخصم عملات للتبادلات الملغاة.' },
+      ],
+    },
+    {
+      category: 'العملات',
+      questions: [
+        { q: 'كيف أكسب العملات؟', a: 'تكسب العملات عند إتمام التبادلات (200 عملة كمُعطٍ، 50 كمُستلِم)، وإتمام مهام التنظيف والكسب (150 عملة)، وغيرها من أنشطة المجتمع.' },
+        { q: 'كيف أستبدل العملات؟', a: 'زُر متجر المكافآت من الشاشة الرئيسية. تصفّح المكافآت المتاحة، تحقق من رصيدك، واضغط استبدال.' },
+        { q: 'هل تنتهي صلاحية العملات؟', a: 'لا، عملاتك المكتسبة لا تنتهي صلاحيتها أبداً. تبقى في حسابك حتى تستخدمها.' },
+      ],
+    },
+    {
+      category: 'ميزات الحي',
+      questions: [
+        { q: 'هل يمكنني الانتماء إلى أكثر من حي؟', a: 'حالياً يمكنك أن تكون عضواً في حي رئيسي واحد. تُحدَّد الأحياء بحدود جغرافية.' },
+        { q: 'كيف أنشئ حياً جديداً؟', a: 'في شاشة اختيار الموقع، انتقل إلى وضع "إنشاء"، ارسم حدود الحي على الخريطة، أدخل الاسم والتفاصيل ثم أرسل.' },
+        { q: 'من يمكنه رؤية المنشورات في حيّي؟', a: 'المنشورات مرئية لجميع أعضاء نفس الحي، مما يُنشئ مجتمعاً محلياً موثوقاً.' },
+      ],
+    },
+  ],
+};
 
 export default function HelpCenter() {
   const navigate = useNavigate();
   const { language } = useApp();
+  const faqs = faqsData[language];
   const [openItems, setOpenItems] = useState<Set<string>>(new Set());
   const [contactName, setContactName] = useState('');
   const [contactMessage, setContactMessage] = useState('');

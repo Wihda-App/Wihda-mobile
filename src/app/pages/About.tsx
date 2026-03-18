@@ -1,11 +1,31 @@
 import { useNavigate } from 'react-router';
 import MobileContainer from '../components/MobileContainer';
 import PageTransition from '../components/PageTransition';
-import { ArrowLeft, Leaf, Users, Award, Heart, Globe, Phone, Mail, FlaskConical } from 'lucide-react';
+import { ArrowLeft, Leaf, Users, Award, Heart, Globe, Phone, Mail, FlaskConical } from 'lucide-react'; // Leaf, Users, Award, Heart also used in valuesData
 import { useApp } from '../context/AppContext';
-import { t } from '../lib/i18n';
+import { t, Lang } from '../lib/i18n';
 
 const APP_VERSION = '1.0.0-beta';
+
+const missionText: Record<Lang, string> = {
+  en: 'Wihda (وحدة) means "unity" in Arabic. We believe that communities thrive when neighbors help each other. Our platform makes it easy to share food, goods, and skills with the people living right next door — reducing waste, fostering connections, and rewarding those who give back.',
+  ar: 'وحدة تعني "الوحدة" بالعربية. نؤمن بأن المجتمعات تزدهر عندما يساعد الجيران بعضهم البعض. تُيسّر منصتنا مشاركة الطعام والبضائع والمهارات مع من يعيشون على مقربة منك — مما يُقلل الهدر ويُعزز الروابط ويُكافئ من يُعطون.',
+};
+
+const valuesData: Record<Lang, { title: string; desc: string; icon: typeof Users; color: string; bg: string; darkBg: string }[]> = {
+  en: [
+    { title: 'Community First', desc: 'Every feature is built to strengthen local bonds and encourage neighbor-to-neighbor interaction.', icon: Users, color: 'text-[#14ae5c]', bg: 'bg-green-50', darkBg: 'dark:bg-green-900/30' },
+    { title: 'Reduce Waste', desc: 'By sharing what we have and cleaning up what we find, we make our neighborhoods cleaner and greener.', icon: Leaf, color: 'text-blue-500', bg: 'bg-blue-50', darkBg: 'dark:bg-blue-900/30' },
+    { title: 'Reward Good Actions', desc: 'Earn coins and badges for every positive contribution. Good deeds deserve recognition.', icon: Award, color: 'text-yellow-500', bg: 'bg-yellow-50', darkBg: 'dark:bg-yellow-900/30' },
+    { title: 'Trust & Safety', desc: "Verified identities and neighborhood boundaries ensure you always know who you're dealing with.", icon: Heart, color: 'text-red-400', bg: 'bg-red-50', darkBg: 'dark:bg-red-900/30' },
+  ],
+  ar: [
+    { title: 'المجتمع أولاً', desc: 'كل ميزة مُصممة لتعزيز الروابط المحلية وتشجيع التفاعل بين الجيران.', icon: Users, color: 'text-[#14ae5c]', bg: 'bg-green-50', darkBg: 'dark:bg-green-900/30' },
+    { title: 'تقليل الهدر', desc: 'بمشاركة ما لدينا وتنظيف ما نجده، نجعل أحياءنا أنظف وأكثر خضرة.', icon: Leaf, color: 'text-blue-500', bg: 'bg-blue-50', darkBg: 'dark:bg-blue-900/30' },
+    { title: 'مكافأة الأعمال الطيبة', desc: 'اكسب عملات وشارات مقابل كل مساهمة إيجابية. الأعمال الطيبة تستحق التقدير.', icon: Award, color: 'text-yellow-500', bg: 'bg-yellow-50', darkBg: 'dark:bg-yellow-900/30' },
+    { title: 'الثقة والأمان', desc: 'الهويات الموثّقة وحدود الأحياء تضمن أنك تعرف دائماً من تتعامل معه.', icon: Heart, color: 'text-red-400', bg: 'bg-red-50', darkBg: 'dark:bg-red-900/30' },
+  ],
+};
 
 export default function About() {
   const navigate = useNavigate();
@@ -54,10 +74,7 @@ export default function About() {
             <h3 className="text-[13px] font-bold text-gray-400 uppercase tracking-wider mb-3">{t(language, 'ourMission')}</h3>
             <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4">
               <p className="text-[13px] text-gray-600 dark:text-gray-300 leading-relaxed">
-                Wihda (وحدة) means "unity" in Arabic. We believe that communities thrive when neighbors
-                help each other. Our platform makes it easy to share food, goods, and skills with the
-                people living right next door — reducing waste, fostering connections, and rewarding
-                those who give back.
+                {missionText[language]}
               </p>
             </div>
           </div>
@@ -66,42 +83,17 @@ export default function About() {
           <div className="mb-5">
             <h3 className="text-[13px] font-bold text-gray-400 uppercase tracking-wider mb-3">{t(language, 'whatWeStandFor')}</h3>
             <div className="space-y-3">
-              <div className="flex items-start gap-3 bg-gray-50 dark:bg-gray-800 rounded-2xl p-4">
-                <div className="bg-green-50 dark:bg-green-900/30 rounded-full p-2 shrink-0">
-                  <Users className="size-4 text-[#14ae5c]" />
+              {valuesData[language].map((item) => (
+                <div key={item.title} className="flex items-start gap-3 bg-gray-50 dark:bg-gray-800 rounded-2xl p-4">
+                  <div className={`${item.bg} ${item.darkBg} rounded-full p-2 shrink-0`}>
+                    <item.icon className={`size-4 ${item.color}`} />
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-semibold text-gray-800 dark:text-gray-100">{item.title}</p>
+                    <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-0.5">{item.desc}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[13px] font-semibold text-gray-800 dark:text-gray-100">Community First</p>
-                  <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-0.5">Every feature is built to strengthen local bonds and encourage neighbor-to-neighbor interaction.</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 bg-gray-50 dark:bg-gray-800 rounded-2xl p-4">
-                <div className="bg-blue-50 dark:bg-blue-900/30 rounded-full p-2 shrink-0">
-                  <Leaf className="size-4 text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-[13px] font-semibold text-gray-800 dark:text-gray-100">Reduce Waste</p>
-                  <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-0.5">By sharing what we have and cleaning up what we find, we make our neighborhoods cleaner and greener.</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 bg-gray-50 dark:bg-gray-800 rounded-2xl p-4">
-                <div className="bg-yellow-50 dark:bg-yellow-900/30 rounded-full p-2 shrink-0">
-                  <Award className="size-4 text-yellow-500" />
-                </div>
-                <div>
-                  <p className="text-[13px] font-semibold text-gray-800 dark:text-gray-100">Reward Good Actions</p>
-                  <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-0.5">Earn coins and badges for every positive contribution. Good deeds deserve recognition.</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 bg-gray-50 dark:bg-gray-800 rounded-2xl p-4">
-                <div className="bg-red-50 dark:bg-red-900/30 rounded-full p-2 shrink-0">
-                  <Heart className="size-4 text-red-400" />
-                </div>
-                <div>
-                  <p className="text-[13px] font-semibold text-gray-800 dark:text-gray-100">Trust &amp; Safety</p>
-                  <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-0.5">Verified identities and neighborhood boundaries ensure you always know who you're dealing with.</p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 

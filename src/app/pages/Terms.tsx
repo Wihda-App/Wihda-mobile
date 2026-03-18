@@ -3,62 +3,43 @@ import MobileContainer from '../components/MobileContainer';
 import PageTransition from '../components/PageTransition';
 import { ArrowLeft } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { t } from '../lib/i18n';
+import { t, Lang } from '../lib/i18n';
 
-const sections = [
-  {
-    title: '1. Acceptance of Terms',
-    body: 'By accessing or using the Wihda mobile application ("App"), you agree to be bound by these Terms and Conditions. If you do not agree, please do not use the App.',
-  },
-  {
-    title: '2. Eligibility',
-    body: 'You must be at least 18 years old and a resident of a supported neighborhood to use Wihda. By using the App, you confirm that you meet these requirements.',
-  },
-  {
-    title: '3. User Accounts',
-    body: 'You are responsible for maintaining the confidentiality of your account credentials. You agree to provide accurate, complete information during registration and to keep your profile up to date. Wihda reserves the right to suspend or terminate accounts that violate these Terms.',
-  },
-  {
-    title: '4. Community Standards',
-    body: 'Users must interact respectfully and honestly. Any form of harassment, fraud, or misuse of the platform — including fake listings, abuse of the exchange system, or manipulating the coin system — will result in immediate account suspension.',
-  },
-  {
-    title: '5. Listings and Exchanges',
-    body: 'All items posted must be legal, accurately described, and genuinely available. Wihda is not a party to any exchange between users. Users are responsible for ensuring items are safe and as described before completing an exchange. Wihda does not guarantee the quality, safety, or legality of any item posted.',
-  },
-  {
-    title: '6. Coins and Rewards',
-    body: 'Coins are virtual credits earned through community activity. They have no cash value and cannot be transferred or sold. Wihda reserves the right to modify, suspend, or discontinue the coin system at any time without notice.',
-  },
-  {
-    title: '7. Privacy',
-    body: 'We collect minimal personal information required to operate the App. Your location data is used only to match you with your neighborhood. We do not sell your personal data to third parties. Please see our Privacy Policy for full details.',
-  },
-  {
-    title: '8. Intellectual Property',
-    body: 'All content, designs, and software in the App are the intellectual property of Wihda or its licensors. You may not copy, reproduce, or distribute any part of the App without prior written consent.',
-  },
-  {
-    title: '9. Disclaimer of Warranties',
-    body: 'The App is provided "as is" without warranties of any kind. Wihda does not warrant that the App will be uninterrupted, error-free, or free of harmful components.',
-  },
-  {
-    title: '10. Limitation of Liability',
-    body: 'To the fullest extent permitted by law, Wihda shall not be liable for any indirect, incidental, or consequential damages arising out of your use of the App or any exchange conducted through it.',
-  },
-  {
-    title: '11. Changes to Terms',
-    body: 'We reserve the right to update these Terms at any time. Continued use of the App after changes are posted constitutes acceptance of the revised Terms.',
-  },
-  {
-    title: '12. Contact',
-    body: 'For questions about these Terms, contact us at contact@wihdaapp.com.',
-  },
-];
+const sectionsData: Record<Lang, { title: string; body: string }[]> = {
+  en: [
+    { title: '1. Acceptance of Terms', body: 'By accessing or using the Wihda mobile application ("App"), you agree to be bound by these Terms and Conditions. If you do not agree, please do not use the App.' },
+    { title: '2. Eligibility', body: 'You must be at least 18 years old and a resident of a supported neighborhood to use Wihda. By using the App, you confirm that you meet these requirements.' },
+    { title: '3. User Accounts', body: 'You are responsible for maintaining the confidentiality of your account credentials. You agree to provide accurate, complete information during registration and to keep your profile up to date. Wihda reserves the right to suspend or terminate accounts that violate these Terms.' },
+    { title: '4. Community Standards', body: 'Users must interact respectfully and honestly. Any form of harassment, fraud, or misuse of the platform — including fake listings, abuse of the exchange system, or manipulating the coin system — will result in immediate account suspension.' },
+    { title: '5. Listings and Exchanges', body: 'All items posted must be legal, accurately described, and genuinely available. Wihda is not a party to any exchange between users. Users are responsible for ensuring items are safe and as described before completing an exchange. Wihda does not guarantee the quality, safety, or legality of any item posted.' },
+    { title: '6. Coins and Rewards', body: 'Coins are virtual credits earned through community activity. They have no cash value and cannot be transferred or sold. Wihda reserves the right to modify, suspend, or discontinue the coin system at any time without notice.' },
+    { title: '7. Privacy', body: 'We collect minimal personal information required to operate the App. Your location data is used only to match you with your neighborhood. We do not sell your personal data to third parties. Please see our Privacy Policy for full details.' },
+    { title: '8. Intellectual Property', body: 'All content, designs, and software in the App are the intellectual property of Wihda or its licensors. You may not copy, reproduce, or distribute any part of the App without prior written consent.' },
+    { title: '9. Disclaimer of Warranties', body: 'The App is provided "as is" without warranties of any kind. Wihda does not warrant that the App will be uninterrupted, error-free, or free of harmful components.' },
+    { title: '10. Limitation of Liability', body: 'To the fullest extent permitted by law, Wihda shall not be liable for any indirect, incidental, or consequential damages arising out of your use of the App or any exchange conducted through it.' },
+    { title: '11. Changes to Terms', body: 'We reserve the right to update these Terms at any time. Continued use of the App after changes are posted constitutes acceptance of the revised Terms.' },
+    { title: '12. Contact', body: 'For questions about these Terms, contact us at contact@wihdaapp.com.' },
+  ],
+  ar: [
+    { title: '١. قبول الشروط', body: 'باستخدامك لتطبيق وحدة ("التطبيق")، فإنك توافق على الالتزام بهذه الشروط والأحكام. إذا كنت لا توافق، يرجى عدم استخدام التطبيق.' },
+    { title: '٢. الأهلية', body: 'يجب أن يكون عمرك 18 عاماً على الأقل وأن تكون مقيماً في أحد الأحياء المدعومة لاستخدام وحدة. باستخدامك للتطبيق، تؤكد استيفاءك لهذه المتطلبات.' },
+    { title: '٣. حسابات المستخدمين', body: 'أنت مسؤول عن الحفاظ على سرية بيانات حسابك. توافق على تقديم معلومات دقيقة وكاملة عند التسجيل وتحديث ملفك الشخصي باستمرار. تحتفظ وحدة بالحق في تعليق أو إنهاء الحسابات التي تنتهك هذه الشروط.' },
+    { title: '٤. معايير المجتمع', body: 'يجب على المستخدمين التفاعل باحترام وصدق. أي شكل من أشكال التحرش أو الاحتيال أو إساءة استخدام المنصة — بما في ذلك الإعلانات الوهمية وإساءة استخدام نظام التبادل أو التلاعب بنظام العملات — سيؤدي إلى تعليق الحساب فوراً.' },
+    { title: '٥. الإعلانات والتبادلات', body: 'يجب أن تكون جميع العناصر المنشورة قانونية وموصوفة بدقة ومتاحة فعلاً. وحدة ليست طرفاً في أي تبادل بين المستخدمين. يتحمل المستخدمون مسؤولية التأكد من سلامة العناصر وتطابقها مع الوصف قبل إتمام التبادل.' },
+    { title: '٦. العملات والمكافآت', body: 'العملات رصيد افتراضي مكتسب من خلال النشاط المجتمعي. ليس لها قيمة نقدية ولا يمكن تحويلها أو بيعها. تحتفظ وحدة بالحق في تعديل أو تعليق أو إيقاف نظام العملات في أي وقت دون إشعار.' },
+    { title: '٧. الخصوصية', body: 'نجمع الحد الأدنى من المعلومات الشخصية اللازمة لتشغيل التطبيق. تُستخدم بيانات موقعك فقط لمطابقتك مع حيّك. لا نبيع بياناتك الشخصية لأطراف ثالثة. يرجى الاطلاع على سياسة الخصوصية للتفاصيل الكاملة.' },
+    { title: '٨. الملكية الفكرية', body: 'جميع المحتوى والتصاميم والبرامج في التطبيق هي ملكية فكرية لوحدة أو مرخصيها. لا يجوز نسخ أو إعادة إنتاج أو توزيع أي جزء من التطبيق دون موافقة خطية مسبقة.' },
+    { title: '٩. إخلاء المسؤولية عن الضمانات', body: 'يُقدَّم التطبيق "كما هو" دون أي ضمانات من أي نوع. لا تضمن وحدة أن يكون التطبيق متواصلاً أو خالياً من الأخطاء أو المكونات الضارة.' },
+    { title: '١٠. حدود المسؤولية', body: 'إلى الحد الذي يسمح به القانون، لن تكون وحدة مسؤولة عن أي أضرار غير مباشرة أو عرضية أو تبعية ناجمة عن استخدامك للتطبيق أو أي تبادل يُجرى من خلاله.' },
+    { title: '١١. تغييرات الشروط', body: 'نحتفظ بالحق في تحديث هذه الشروط في أي وقت. استمرار استخدام التطبيق بعد نشر التغييرات يُعدّ قبولاً للشروط المعدّلة.' },
+    { title: '١٢. التواصل', body: 'لأي استفسارات حول هذه الشروط، تواصل معنا على contact@wihdaapp.com.' },
+  ],
+};
 
 export default function Terms() {
   const navigate = useNavigate();
   const { language } = useApp();
+  const sections = sectionsData[language];
 
   return (
     <MobileContainer>
