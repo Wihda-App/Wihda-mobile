@@ -1,9 +1,26 @@
+import { useEffect } from 'react';
 import { RouterProvider } from 'react-router';
 import { Toaster } from 'sonner';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { getRouter } from './routes';
 
 export default function App() {
   const router = getRouter();
+
+  useEffect(() => {
+    LocalNotifications.requestPermissions().catch(() => {});
+    const listenerPromise = LocalNotifications.addListener(
+      'localNotificationActionPerformed',
+      (action: any) => {
+        const extra = action.notification?.extra;
+        if (extra?.submissionId) {
+          router.navigate(`/cleanify-result/${extra.submissionId}`);
+        }
+      }
+    );
+    return () => { listenerPromise.then(l => l.remove()); };
+  }, []);
+
   return (
     <>
       <RouterProvider router={router} />

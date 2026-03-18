@@ -50,19 +50,7 @@ export default function CleanAndEarn() {
   const fileInputAfterRef = useRef<HTMLInputElement>(null);
   const fileInputAfterCameraRef = useRef<HTMLInputElement>(null);
 
-  // Request notification permission and handle tap
-  useEffect(() => {
-    LocalNotifications.requestPermissions().catch(() => {});
-    const listener = LocalNotifications.addListener('localNotificationActionPerformed', (action: any) => {
-      const extra = action.notification?.extra;
-      if (extra?.submissionId) {
-        navigate(`/cleanify-result/${extra.submissionId}`);
-      } else {
-        navigate('/clean-earn');
-      }
-    });
-    return () => { listener.then(l => l.remove()); };
-  }, [navigate]);
+  // Notification permission is requested globally in App.tsx
 
   // Check for active submission on mount
   useEffect(() => {
