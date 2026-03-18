@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import MobileContainer from '../components/MobileContainer';
 import { apiFetch, clearTokens, getStoredToken } from '../lib/api';
 import {
-  LayoutDashboard, Zap, LogOut, Plus, Trash2,
+  LayoutDashboard, Zap, LogOut, Plus, Trash2, Pencil,
   Users, ClipboardList, CheckCircle, XCircle, Coins,
   ChevronRight, X, Loader2, RefreshCw,
 } from 'lucide-react';
@@ -141,20 +141,23 @@ function DashboardTab() {
 
 // ─── Activities tab ───────────────────────────────────────────────────────────
 
+const EMPTY_FORM = {
+  title: '', subtitle: '', description: '', organizer: '',
+  organizer_logo: '', location: '',
+  start_dt: '', end_dt: '', url: '',
+  image1: '', image2: '', image3: '',
+  contact_phone: '', contact_email: '', coin_reward: '50',
+};
+
 function ActivitiesTab() {
-  const [campaigns, setCampaigns] = useState<any[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [showForm, setShowForm]   = useState(false);
-  const [deleteId, setDeleteId]   = useState<string | null>(null);
+  const [campaigns, setCampaigns]   = useState<any[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [showForm, setShowForm]     = useState(false);
+  const [editId, setEditId]         = useState<string | null>(null);
+  const [deleteId, setDeleteId]     = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const [form, setForm] = useState({
-    title: '', subtitle: '', description: '', organizer: '',
-    organizer_logo: '', location: '',
-    start_dt: '', end_dt: '', url: '',
-    image1: '', image2: '', image3: '',
-    contact_phone: '', contact_email: '', coin_reward: '50',
-  });
+  const [form, setForm] = useState({ ...EMPTY_FORM });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -167,35 +170,71 @@ function ActivitiesTab() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const openCreate = () => {
+    setEditId(null);
+    setForm({ ...EMPTY_FORM });
+    setShowForm(true);
+  };
+
+  const openEdit = (c: any) => {
+    let images: string[] = [];
+    try { images = c.images_json ? JSON.parse(c.images_json) : []; } catch { /* ignore */ }
+    setEditId(c.id);
+    setForm({
+      title:          c.title          || '',
+      subtitle:       c.subtitle       || '',
+      description:    c.description    || '',
+      organizer:      c.organizer      || '',
+      organizer_logo: c.organizer_logo || '',
+      location:       c.location       || '',
+      start_dt:       c.start_dt       ? c.start_dt.slice(0, 16) : '',
+      end_dt:         c.end_dt         ? c.end_dt.slice(0, 16)   : '',
+      url:            c.url            || '',
+      image1:         images[0]        || '',
+      image2:         images[1]        || '',
+      image3:         images[2]        || '',
+      contact_phone:  c.contact_phone  || '',
+      contact_email:  c.contact_email  || '',
+      coin_reward:    String(c.coin_reward ?? 50),
+    });
+    setShowForm(true);
+  };
+
+  const buildBody = () => {
+    const images = [form.image1, form.image2, form.image3].filter(Boolean);
+    return {
+      title:          form.title,
+      subtitle:       form.subtitle       || null,
+      description:    form.description    || null,
+      organizer:      form.organizer       || null,
+      organizer_logo: form.organizer_logo  || null,
+      location:       form.location        || null,
+      start_dt:       form.start_dt,
+      end_dt:         form.end_dt          || null,
+      url:            form.url             || null,
+      images:         images.length > 0 ? images : undefined,
+      contact_phone:  form.contact_phone   || null,
+      contact_email:  form.contact_email   || null,
+      coin_reward:    parseInt(form.coin_reward) || 50,
+    };
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title || !form.start_dt) return;
     setSubmitting(true);
     try {
-      const images = [form.image1, form.image2, form.image3].filter(Boolean);
-      await apiFetch('/v1/admin/campaigns', {
-        method: 'POST',
-        body: JSON.stringify({
-          title:          form.title,
-          subtitle:       form.subtitle       || null,
-          description:    form.description    || null,
-          organizer:      form.organizer       || null,
-          organizer_logo: form.organizer_logo  || null,
-          location:       form.location        || null,
-          start_dt:       form.start_dt,
-          end_dt:         form.end_dt          || null,
-          url:            form.url             || null,
-          images:         images.length > 0 ? images : undefined,
-          contact_phone:  form.contact_phone   || null,
-          contact_email:  form.contact_email   || null,
-          coin_reward:    parseInt(form.coin_reward) || 50,
-        }),
-      });
+      if (editId) {
+        await apiFetch(`/v1/admin/campaigns/${editId}`, { method: 'PUT', body: JSON.stringify(buildBody()) });
+        setCampaigns(prev => prev.map(c => c.id === editId ? { ...c, ...buildBody(), id: editId } : c));
+      } else {
+        await apiFetch('/v1/admin/campaigns', { method: 'POST', body: JSON.stringify(buildBody()) });
+        load();
+      }
       setShowForm(false);
-      setForm({ title: '', subtitle: '', description: '', organizer: '', organizer_logo: '', location: '', start_dt: '', end_dt: '', url: '', image1: '', image2: '', image3: '', contact_phone: '', contact_email: '', coin_reward: '50' });
-      load();
+      setEditId(null);
     } catch (err: any) {
-      alert(err.message || 'Failed to create activity');
+      alert(err.message || 'Failed to save activity');
     } finally {
       setSubmitting(false);
     }
@@ -231,7 +270,7 @@ function ActivitiesTab() {
       <div className="flex items-center justify-between px-4 py-3">
         <p className="text-gray-400 text-[13px]">{campaigns.length} activities</p>
         <button
-          onClick={() => setShowForm(true)}
+          onClick={openCreate}
           className="flex items-center gap-1.5 bg-[#14ae5c] text-white px-4 py-2 rounded-xl text-[13px] font-semibold active:scale-[0.98] transition-all"
         >
           <Plus className="size-4" /> Add Activity
@@ -255,12 +294,20 @@ function ActivitiesTab() {
                   {c.start_dt ? new Date(c.start_dt).toLocaleDateString() : '—'} · {c.participant_count ?? 0} joined
                 </p>
               </div>
-              <button
-                onClick={() => setDeleteId(c.id)}
-                className="shrink-0 size-8 flex items-center justify-center rounded-xl bg-gray-800 text-red-400 active:scale-95 transition-all"
-              >
-                <Trash2 className="size-4" />
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => openEdit(c)}
+                  className="size-8 flex items-center justify-center rounded-xl bg-gray-800 text-blue-400 active:scale-95 transition-all"
+                >
+                  <Pencil className="size-4" />
+                </button>
+                <button
+                  onClick={() => setDeleteId(c.id)}
+                  className="size-8 flex items-center justify-center rounded-xl bg-gray-800 text-red-400 active:scale-95 transition-all"
+                >
+                  <Trash2 className="size-4" />
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -270,13 +317,13 @@ function ActivitiesTab() {
       {showForm && (
         <div className="fixed inset-0 bg-gray-950 z-50 flex flex-col">
           <div className="flex items-center justify-between px-5 pt-[env(safe-area-inset-top)] h-14 mt-2">
-            <h2 className="text-white text-[17px] font-bold">New Activity</h2>
-            <button onClick={() => setShowForm(false)} className="text-gray-400 active:text-white">
+            <h2 className="text-white text-[17px] font-bold">{editId ? 'Edit Activity' : 'New Activity'}</h2>
+            <button onClick={() => { setShowForm(false); setEditId(null); }} className="text-gray-400 active:text-white">
               <X className="size-6" />
             </button>
           </div>
 
-          <form onSubmit={handleCreate} className="flex-1 overflow-y-auto px-5 space-y-4 pb-6 pt-2">
+          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-5 space-y-4 pb-6 pt-2">
             {field('title', 'Title', 'text', true)}
             {field('subtitle', 'Subtitle')}
             <div>
@@ -309,7 +356,7 @@ function ActivitiesTab() {
               disabled={submitting}
               className="w-full bg-[#14ae5c] text-white py-4 rounded-2xl text-[15px] font-semibold flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] transition-all mt-2"
             >
-              {submitting ? <Loader2 className="size-5 animate-spin" /> : 'Create Activity'}
+              {submitting ? <Loader2 className="size-5 animate-spin" /> : editId ? 'Save Changes' : 'Create Activity'}
             </button>
           </form>
         </div>
