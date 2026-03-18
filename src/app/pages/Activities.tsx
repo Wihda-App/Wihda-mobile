@@ -34,8 +34,12 @@ interface Campaign {
 
 function ImageCarousel({ images, title }: { images: string[]; title: string }) {
   const [idx, setIdx] = useState(0);
+  const [failed, setFailed] = useState<Set<number>>(new Set());
 
-  if (images.length === 0) {
+  const validImages = images.filter((_, i) => !failed.has(i));
+  const currentFailed = failed.has(idx);
+
+  if (images.length === 0 || (validImages.length === 0)) {
     return (
       <div className="w-full h-[200px] bg-gradient-to-br from-[#14ae5c]/20 to-emerald-100 flex items-center justify-center">
         <Sparkles className="size-14 text-[#14ae5c]/30" />
@@ -45,12 +49,19 @@ function ImageCarousel({ images, title }: { images: string[]; title: string }) {
 
   return (
     <div className="relative w-full h-[200px] overflow-hidden">
-      <img
-        src={images[idx]}
-        alt={title}
-        className="w-full h-full object-cover"
-        onError={(e) => { (e.target as HTMLImageElement).src = ''; (e.target as HTMLImageElement).className = 'hidden'; }}
-      />
+      {currentFailed ? (
+        <div className="w-full h-full bg-gradient-to-br from-[#14ae5c]/20 to-emerald-100 flex items-center justify-center">
+          <Sparkles className="size-14 text-[#14ae5c]/30" />
+        </div>
+      ) : (
+        <img
+          key={idx}
+          src={images[idx]}
+          alt={title}
+          className="w-full h-full object-cover"
+          onError={() => setFailed(prev => new Set(prev).add(idx))}
+        />
+      )}
       {images.length > 1 && (
         <>
           <button
