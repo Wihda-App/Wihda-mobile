@@ -139,9 +139,11 @@ export default function ActivityJoin() {
                   </div>
                   <div className="text-left">
                     <p className="text-amber-700 text-[13px] font-semibold">
-                      +{campaign.coin_reward} coins awaiting you
+                      +{campaign.coin_reward} coins reward
                     </p>
-                    <p className="text-amber-500 text-[11px]">Earned upon verified participation</p>
+                    <p className="text-amber-500 text-[11px] mt-0.5 leading-relaxed">
+                      Awarded after the activity ends and the organizer confirms your attendance
+                    </p>
                   </div>
                 </div>
               )}
@@ -229,8 +231,10 @@ export default function ActivityJoin() {
                   <Coins className="size-6 text-white" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-white text-[16px] font-bold">+{campaign.coin_reward} coins</p>
-                  <p className="text-white/80 text-[12px] mt-0.5">Awarded after verified participation</p>
+                  <p className="text-white text-[17px] font-bold">+{campaign.coin_reward} coins</p>
+                  <p className="text-white/85 text-[12px] mt-1 leading-relaxed">
+                    Awarded after the activity ends and the organizer confirms your attendance
+                  </p>
                 </div>
               </div>
             )}
@@ -242,7 +246,7 @@ export default function ActivityJoin() {
                 { icon: '✅', text: "You'll be counted as a participant" },
                 { icon: '📍', text: 'Attend the activity on the scheduled date' },
                 campaign.coin_reward > 0
-                  ? { icon: '🪙', text: `Earn ${campaign.coin_reward} coins upon verified participation` }
+                  ? { icon: '🪙', text: `Earn ${campaign.coin_reward} coins after the activity ends and the organizer confirms your attendance` }
                   : null,
                 { icon: '❌', text: 'You can cancel anytime from the activity page' },
               ].filter(Boolean).map((item, i) => (

@@ -295,13 +295,18 @@ export default function ActivityDetail() {
                 )}
 
                 {campaign.coin_reward > 0 && (
-                  <div className="flex items-center gap-2.5">
-                    <div className="size-8 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+                  <div className="flex items-start gap-2.5">
+                    <div className="size-8 rounded-xl bg-amber-50 flex items-center justify-center shrink-0 mt-0.5">
                       <Coins className="size-4 text-amber-500" />
                     </div>
-                    <p className="text-[13px] font-semibold text-gray-800">
-                      Earn {campaign.coin_reward} coins for participating
-                    </p>
+                    <div>
+                      <p className="text-[13px] font-semibold text-gray-800">
+                        +{campaign.coin_reward} coins reward
+                      </p>
+                      <p className="text-[11px] text-amber-500 mt-0.5">
+                        Awarded after the activity ends and the organizer confirms your attendance
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>

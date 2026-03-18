@@ -162,6 +162,16 @@ function ActivityCard({ campaign, onToggleFavorite, favorites }: {
           </div>
         )}
 
+        {/* Coins note */}
+        {campaign.coin_reward > 0 && (
+          <div className="flex items-center gap-1 mt-2">
+            <Coins className="size-3 text-amber-400 shrink-0" />
+            <p className="text-[11px] text-amber-500 font-medium">
+              +{campaign.coin_reward} coins after organizer confirms your attendance
+            </p>
+          </div>
+        )}
+
         {/* Bottom row */}
         <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
           <div className="flex items-center gap-1 text-gray-400">
@@ -176,7 +186,11 @@ function ActivityCard({ campaign, onToggleFavorite, favorites }: {
                 : 'bg-[#14ae5c] text-white shadow-sm shadow-[#14ae5c]/30'
             }`}
           >
-            {campaign.is_joined ? 'Joined ✓' : 'Join'}
+            {campaign.is_joined
+              ? 'Joined ✓'
+              : campaign.coin_reward > 0
+                ? `Join · +${campaign.coin_reward}`
+                : 'Join'}
           </button>
         </div>
       </div>
