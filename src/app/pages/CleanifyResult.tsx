@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import MobileContainer from '../components/MobileContainer';
 import PageTransition from '../components/PageTransition';
@@ -27,20 +27,44 @@ export default function CleanifyResult() {
   const [submission, setSubmission] = useState<SubmissionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const attemptsRef = useRef(0);
 
   useEffect(() => {
     if (!id) return;
-    apiFetch(`/v1/cleanify/submissions/${id}`)
-      .then((data) => {
-        if (data.success) {
-          setSubmission(data.data);
-          if (data.data.status === 'approved') setTimeout(() => refreshProfile(), 500);
-        } else {
-          setError('Submission not found');
-        }
-      })
-      .catch(() => setError('Failed to load submission'))
-      .finally(() => setLoading(false));
+
+    const fetchSubmission = (isInitial = false) => {
+      apiFetch(`/v1/cleanify/submissions/${id}`)
+        .then((data) => {
+          if (data.success) {
+            const sub: SubmissionDetail = data.data;
+            setSubmission(sub);
+            if (sub.status === 'approved') {
+              setTimeout(() => refreshProfile(), 1000);
+            } else if (sub.status === 'pending_review') {
+              // Keep polling until resolved or max attempts reached
+              attemptsRef.current += 1;
+              if (attemptsRef.current < 60) {
+                pollRef.current = setTimeout(() => fetchSubmission(), 5000);
+              }
+            }
+          } else {
+            setError('Submission not found');
+          }
+        })
+        .catch(() => {
+          if (isInitial) setError('Failed to load submission');
+          else {
+            attemptsRef.current += 1;
+            if (attemptsRef.current < 60) pollRef.current = setTimeout(() => fetchSubmission(), 5000);
+          }
+        })
+        .finally(() => { if (isInitial) setLoading(false); });
+    };
+
+    fetchSubmission(true);
+
+    return () => { if (pollRef.current) clearTimeout(pollRef.current); };
   }, [id]);
 
   return (
@@ -120,8 +144,10 @@ export default function CleanifyResult() {
                   {submission.coins_awarded != null && (
                     <div className="bg-gradient-to-br from-[#fff9e6] to-[#fff3cc] rounded-2xl p-6 w-full text-center mb-6">
                       <p className="text-[12px] text-gray-500 mb-2">Coins Earned</p>
-                      <div className="flex items-center justify-center gap-2">
-                        <span className="text-[32px] leading-none">🪙</span>
+                      <div className="flex items-center justify-center gap-3">
+                        <div className="size-[36px] rounded-full border-[3px] border-[#f0a326] flex items-center justify-center">
+                          <span className="text-[16px] font-bold text-[#f0a326]">$</span>
+                        </div>
                         <span className="text-[40px] font-bold text-[#f0a326]">{submission.coins_awarded}</span>
                       </div>
                     </div>

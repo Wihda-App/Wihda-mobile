@@ -718,8 +718,10 @@ const stepNumber = (step === 'intro' || step === 'checking' || step === 'active-
 
               <div className="bg-gradient-to-br from-[#fff9e6] to-[#fff3cc] rounded-2xl p-6 w-full text-center mb-6">
                 <p className="text-[12px] text-gray-500 mb-2">Coins Earned</p>
-                <div className="flex items-center justify-center gap-2">
-                  <span className="text-[32px] leading-none">🪙</span>
+                <div className="flex items-center justify-center gap-3">
+                  <div className="size-[36px] rounded-full border-[3px] border-[#f0a326] flex items-center justify-center">
+                    <span className="text-[16px] font-bold text-[#f0a326]">$</span>
+                  </div>
                   <span className="text-[40px] font-bold text-[#f0a326]">{coinsEarned}</span>
                 </div>
               </div>

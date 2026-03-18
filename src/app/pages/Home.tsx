@@ -21,6 +21,7 @@ import {
   Calendar,
   Users,
   ChevronRight,
+  ShieldCheck,
 } from 'lucide-react';
 
 const categories = [
@@ -191,9 +192,9 @@ export default function Home() {
                 <div className="flex gap-2 mt-3">
                   <button
                     onClick={() => navigate('/verify-identity')}
-                    className="flex-1 bg-white text-blue-600 py-2 rounded-xl text-[13px] font-semibold active:scale-95 transition-transform"
+                    className="flex-1 bg-white text-blue-600 py-2 rounded-xl text-[13px] font-semibold active:scale-95 transition-transform flex items-center justify-center gap-1.5"
                   >
-                    Verify Now
+                    <ShieldCheck className="size-4" /> Verify Now
                   </button>
                   <button
                     onClick={() => { setShowVerifyBanner(false); sessionStorage.setItem('wihda_verify_skipped', '1'); }}
@@ -360,7 +361,9 @@ export default function Home() {
                             </div>
                             {campaign.coin_reward > 0 && (
                               <div className="flex items-center gap-1 text-[#f0a326] text-[11px] font-semibold ml-auto">
-                                <span className="text-[12px] leading-none">🪙</span>
+                                <div className="size-[13px] rounded-full border-[1.5px] border-[#f0a326] flex items-center justify-center">
+                                  <span className="text-[5px] font-bold text-[#f0a326]">$</span>
+                                </div>
                                 {campaign.coin_reward}
                               </div>
                             )}
@@ -424,7 +427,9 @@ function RecentPostCard({ name, item, time, coins, image }: {
           <p className="text-[11px] text-gray-400">{name} &middot; {time}</p>
           {coins > 0 && (
             <div className="flex items-center gap-1 text-[#f0a326] text-[11px] font-semibold">
-              <span className="text-[11px] leading-none">🪙</span>
+              <div className="size-[13px] rounded-full border-[1.5px] border-[#f0a326] flex items-center justify-center">
+                <span className="text-[5px] font-bold text-[#f0a326]">$</span>
+              </div>
               {coins}
             </div>
           )}
