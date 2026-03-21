@@ -13,8 +13,12 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Pin #root to exact viewport bounds — works correctly in iOS WKWebView */
+/* Pin #root to exact viewport bounds — only in native app (iOS/Android) */
 #root {
+  min-height: 100vh;
+}
+
+#root.native-app {
   position: fixed;
   top: 0;
   left: 0;
