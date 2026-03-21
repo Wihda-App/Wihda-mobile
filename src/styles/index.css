@@ -8,6 +8,7 @@
 html, body {
   margin: 0;
   padding: 0;
+  height: 100%;
   overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -15,7 +16,8 @@ html, body {
 
 /* Pin #root to exact viewport bounds — only in native app (iOS/Android) */
 #root {
-  min-height: 100vh;
+  min-height: 100%;
+  height: 100%;
 }
 
 #root.native-app {
