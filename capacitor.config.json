@@ -10,7 +10,8 @@
       "launchShowDuration": 0
     },
     "StatusBar": {
-      "style": "LIGHT"
+      "style": "LIGHT",
+      "backgroundColor": "#14ae5c"
     },
     "Keyboard": {
       "resize": "body",
@@ -18,7 +19,8 @@
     }
   },
   "ios": {
-    "contentInset": "never"
+    "contentInset": "never",
+    "scheme": "com.wihda.app"
   },
   "android": {
     "allowMixedContent": true,

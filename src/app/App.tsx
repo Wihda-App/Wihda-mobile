@@ -4,6 +4,8 @@ import { Toaster } from 'sonner';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { StatusBar, Style } from '@capacitor/status-bar';
+import { App as CapApp } from '@capacitor/app';
+import { Browser } from '@capacitor/browser';
 import { Capacitor } from '@capacitor/core';
 import { apiFetch } from './lib/api';
 import { getRouter } from './routes';
@@ -12,10 +14,11 @@ export default function App() {
   const router = getRouter();
 
   useEffect(() => {
-    // Status bar — transparent overlay (content shows behind it)
+    // Status bar — transparent on iOS, solid white on Android
     if (Capacitor.isNativePlatform()) {
-      StatusBar.setOverlaysWebView({ overlay: true }).catch(() => {});
-      StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
+      StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
+      StatusBar.setBackgroundColor({ color: '#ffffff' }).catch(() => {});
+      StatusBar.setStyle({ style: Style.Light }).catch(() => {});
     }
 
     // Local notifications (cleanify)
@@ -65,9 +68,31 @@ export default function App() {
       pushListeners = [regListener, actionListener];
     }
 
+    // Deep link handler — catches com.wihda.app://auth/google/callback?tokens
+    let appUrlListener: Promise<{ remove: () => void }> | null = null;
+    if (Capacitor.isNativePlatform()) {
+      appUrlListener = CapApp.addListener('appUrlOpen', async (event) => {
+        const url = new URL(event.url);
+        if (url.pathname === '/auth/google/callback') {
+          await Browser.close().catch(() => {});
+          const accessToken = url.searchParams.get('access_token');
+          const refreshToken = url.searchParams.get('refresh_token');
+          const error = url.searchParams.get('error');
+          if (accessToken) {
+            router.navigate(`/auth/google/callback?access_token=${accessToken}&refresh_token=${refreshToken || ''}`);
+          } else if (error) {
+            router.navigate('/login');
+          }
+        } else if (url.searchParams.get('thread_id')) {
+          router.navigate(`/chat/${url.searchParams.get('thread_id')}`);
+        }
+      });
+    }
+
     return () => {
       localListenerPromise.then(l => l.remove());
       pushListeners.forEach(p => p.then(l => l.remove()));
+      appUrlListener?.then(l => l.remove());
     };
   }, []);
 

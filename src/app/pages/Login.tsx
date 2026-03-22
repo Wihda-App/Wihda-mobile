@@ -7,6 +7,8 @@ import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import { t } from '../lib/i18n';
 import { API_BASE } from '../lib/api';
+import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -23,7 +25,12 @@ export default function Login() {
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
     try {
-      window.location.href = `${API_BASE}/v1/auth/google`;
+      const url = `${API_BASE}/v1/auth/google${Capacitor.isNativePlatform() ? '?redirect_to=native' : ''}`;
+      if (Capacitor.isNativePlatform()) {
+        await Browser.open({ url, presentationStyle: 'popover' });
+      } else {
+        window.location.href = url;
+      }
     } catch {
       setGoogleLoading(false);
     }
