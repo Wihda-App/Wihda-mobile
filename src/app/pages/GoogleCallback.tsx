@@ -11,8 +11,8 @@ export default function GoogleCallback() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const code = searchParams.get('code');
-    const state = searchParams.get('state');
+    const accessToken = searchParams.get('access_token');
+    const refreshToken = searchParams.get('refresh_token');
     const errorParam = searchParams.get('error');
 
     if (errorParam) {
@@ -21,29 +21,14 @@ export default function GoogleCallback() {
       return;
     }
 
-    if (!code) {
-      navigate('/login');
+    // Backend redirects here with tokens already issued
+    if (accessToken) {
+      setTokens(accessToken, refreshToken || '');
+      refreshProfile().then(() => navigate('/home', { replace: true }));
       return;
     }
 
-    apiFetch('/v1/auth/google/callback', {
-      method: 'POST',
-      body: JSON.stringify({ code, state }),
-    })
-      .then(async (data) => {
-        if (data.success) {
-          setTokens(data.data.access_token, data.data.refresh_token);
-          await refreshProfile();
-          navigate('/home', { replace: true });
-        } else {
-          setError('Google sign-in failed. Please try again.');
-          setTimeout(() => navigate('/login'), 2000);
-        }
-      })
-      .catch(() => {
-        setError('Google sign-in failed. Please try again.');
-        setTimeout(() => navigate('/login'), 2000);
-      });
+    navigate('/login');
   }, [searchParams, navigate, refreshProfile]);
 
   return (
