@@ -63,8 +63,14 @@ export default function CleanAndEarn() {
       .then((data) => {
         const sub = data.data?.submission;
         if (sub) {
-          setActiveSubmission(sub);
-          setStep('active-exists');
+          if (sub.status === 'pending_review') {
+            setSubmissionId(sub.id);
+            setStep('pending-review');
+            pollSubmissionStatus(sub.id);
+          } else {
+            setActiveSubmission(sub);
+            setStep('active-exists');
+          }
         } else {
           setStep('intro');
         }
@@ -263,15 +269,16 @@ export default function CleanAndEarn() {
 
   // ─── Poll for AI review result ────────────────────────────────────────────────
 
-  const pollSubmissionStatus = useCallback(async () => {
-    if (!submissionId) return;
+  const pollSubmissionStatus = useCallback(async (idOverride?: string) => {
+    const id = idOverride ?? submissionId;
+    if (!id) return;
 
     let attempts = 0;
     const maxAttempts = 60; // poll for up to ~3 minutes
 
     const poll = async () => {
       try {
-        const data = await apiFetch(`/v1/cleanify/submissions/${submissionId}`);
+        const data = await apiFetch(`/v1/cleanify/submissions/${id}`);
         if (!data.success) return;
 
         const submission = data.data;
@@ -281,13 +288,15 @@ export default function CleanAndEarn() {
           const coins = submission.coins_awarded ?? 150;
           setCoinsEarned(coins);
           LocalNotifications.cancel({ notifications: [{ id: 1002 }] }).catch(() => {});
+          LocalNotifications.schedule({ notifications: [{ id: 1003, title: 'Submission Approved! 🎉', body: `You earned ${coins} coins! Great work!`, schedule: { at: new Date(Date.now() + 500) } }] }).catch(() => {});
           setStep('approved');
-          setTimeout(() => refreshProfile(), 1500); // slight delay ensures coin entry is committed
+          setTimeout(() => refreshProfile(), 1500);
           toast('Approved!', { description: `You earned ${coins} coins!` });
           return;
         }
         if (status === 'rejected') {
           LocalNotifications.cancel({ notifications: [{ id: 1002 }] }).catch(() => {});
+          LocalNotifications.schedule({ notifications: [{ id: 1004, title: 'Submission Not Approved', body: submission.review_note || 'Your submission could not be verified. Please try again.', schedule: { at: new Date(Date.now() + 500) } }] }).catch(() => {});
           setRejectionReason(submission.review_note || '');
           setStep('rejected');
           return;
