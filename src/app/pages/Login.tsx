@@ -133,7 +133,7 @@ export default function Login() {
         </div>
 
         {/* Form */}
-        <div className="flex-1 px-6 pt-4">
+        <div className="flex-1 overflow-y-auto px-6 pt-4">
           <h2 className="text-[24px] font-bold text-gray-900 dark:text-white mb-1 font-[Poppins,sans-serif]">{t(language, 'welcomeBack')}</h2>
           <p className="text-[14px] text-gray-400 mb-8">{t(language, 'signInToAccount')}</p>
 
@@ -240,19 +240,19 @@ export default function Login() {
           >
             {t(language, 'continueAsGuest')}
           </button>
-        </div>
 
-        {/* Bottom signup link */}
-        <div className="px-6 pb-10 pt-4 text-center">
-          <p className="text-[14px] text-gray-500 dark:text-gray-400">
-            {t(language, 'noAccount')}{' '}
-            <button
-              onClick={() => navigate('/signup')}
-              className="text-[#14ae5c] font-semibold"
-            >
-              {t(language, 'signUp')}
-            </button>
-          </p>
+          {/* Bottom signup link */}
+          <div className="pb-10 pt-4 text-center">
+            <p className="text-[14px] text-gray-500 dark:text-gray-400">
+              {t(language, 'noAccount')}{' '}
+              <button
+                onClick={() => navigate('/signup')}
+                className="text-[#14ae5c] font-semibold"
+              >
+                {t(language, 'signUp')}
+              </button>
+            </p>
+          </div>
         </div>
       </div>
     </MobileContainer>
