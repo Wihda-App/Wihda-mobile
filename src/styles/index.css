@@ -8,14 +8,16 @@
 html, body {
   margin: 0;
   padding: 0;
+  height: 100%;
   overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Pin #root to exact viewport bounds — only in native app (iOS/Android) */
+/* Fill full viewport in both web and native modes */
 #root {
-  min-height: 100vh;
+  height: 100%;
+  min-height: 100dvh;
 }
 
 #root.native-app {
