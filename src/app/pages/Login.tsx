@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import MobileContainer from '../components/MobileContainer';
 import wihdaLogo from "../../assets/wihda_logo.png";
 import { Eye, EyeOff, Mail, Lock, ArrowRight, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -117,8 +116,7 @@ export default function Login() {
   };
 
   return (
-    <MobileContainer>
-      <div className="size-full overflow-y-auto bg-white dark:bg-gray-900">
+    <div className="h-screen overflow-y-auto bg-white dark:bg-gray-900">
         {/* Top gradient area */}
         <div className="bg-gradient-to-b from-[#f0faf4] to-white dark:from-gray-800 dark:to-gray-900 pt-16 pb-8 px-8 flex flex-col items-center relative">
           <button
@@ -255,6 +253,6 @@ export default function Login() {
           </div>
         </div>
       </div>
-    </MobileContainer>
+    </div>
   );
 }
