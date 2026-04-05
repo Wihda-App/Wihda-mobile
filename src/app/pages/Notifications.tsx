@@ -38,7 +38,7 @@ function localizeNotif(n: { type: string; title: string; body: string }, languag
     leftover_request: { title: 'طلب جديد على عرضك!' },
     match_closed: { title: 'اكتمل التبادل' },
     new_message: { title: 'رسالة جديدة' },
-    new_activity: { title: 'نشاط جديد في حيّك! 🎉' },
+    campaign_new: { title: 'نشاط جديد في حيّك! 🎉' },
   };
   const override = ar[n.type];
   if (!override) return { title: n.title, body: n.body };
@@ -51,7 +51,7 @@ const notifIcon = (type: string) => {
   if (type === 'cleanify_rejected') return <Sparkles className="size-5 text-red-500" />;
   if (type === 'match_closed') return <CheckCircle2 className="size-5 text-[#14ae5c]" />;
   if (type.includes('coin')) return <Award className="size-5 text-[#f0a326]" />;
-  if (type === 'new_activity') return <Calendar className="size-5 text-purple-500" />;
+  if (type === 'campaign_new') return <Calendar className="size-5 text-purple-500" />;
   return <Bell className="size-5 text-gray-400" />;
 };
 
@@ -61,7 +61,7 @@ const notifBg = (type: string) => {
   if (type === 'cleanify_rejected') return 'bg-red-50';
   if (type === 'match_closed') return 'bg-green-50';
   if (type.includes('coin')) return 'bg-yellow-50';
-  if (type === 'new_activity') return 'bg-purple-50';
+  if (type === 'campaign_new') return 'bg-purple-50';
   return 'bg-gray-50';
 };
 
@@ -124,7 +124,7 @@ export default function Notifications() {
       navigate(`/chat/${data.thread_id}`);
     } else if (notif.type === 'cleanify_approved' || notif.type === 'cleanify_rejected') {
       navigate('/clean-and-earn');
-    } else if (notif.type === 'new_activity') {
+    } else if (notif.type === 'campaign_new') {
       navigate('/activities');
     }
   };
