@@ -1,11 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import MobileContainer from '../components/MobileContainer';
 import { apiFetch, clearTokens, getStoredToken } from '../lib/api';
 import {
   LayoutDashboard, Zap, LogOut, Plus, Trash2, Pencil,
   Users, ClipboardList, CheckCircle, XCircle, Coins,
-  ChevronRight, X, Loader2, RefreshCw,
+  X, Loader2, RefreshCw, Mail, MapPin, Calendar,
+  AlertTriangle, CheckCircle2, Building2,
 } from 'lucide-react';
 
 // ─── Admin guard ──────────────────────────────────────────────────────────────
@@ -48,11 +49,25 @@ function StatCard({ icon, label, value, color }: {
 
 // ─── Dashboard tab ────────────────────────────────────────────────────────────
 
+interface ScrapeSourceResult { name: string; url: string; count: number; error?: string; }
+interface ScrapeJobResult {
+  status: 'running' | 'done' | 'error';
+  started_at: string;
+  finished_at?: string;
+  sources: ScrapeSourceResult[];
+  total_events: number;
+  used_fallback: boolean;
+  upserted: number;
+  neighborhoods: number;
+  error?: string;
+}
+
 function DashboardTab() {
   const [stats, setStats]     = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [scraping, setScraping] = useState(false);
-  const [scrapeMsg, setScrapeMsg] = useState('');
+  const [scrapeJob, setScrapeJob] = useState<ScrapeJobResult | null>(null);
+  const [scraping, setScraping]   = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -65,16 +80,38 @@ function DashboardTab() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Cleanup poll on unmount
+  useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
+
+  const pollJob = useCallback((jobId: string) => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    pollRef.current = setInterval(async () => {
+      try {
+        const data = await apiFetch(`/v1/admin/campaigns/ingest/status?id=${jobId}`);
+        if (data.success && data.data) {
+          setScrapeJob(data.data);
+          if (data.data.status !== 'running') {
+            clearInterval(pollRef.current!);
+            pollRef.current = null;
+            setScraping(false);
+          }
+        }
+      } catch { /* keep polling */ }
+    }, 2000);
+  }, []);
+
   const triggerScrape = async () => {
     setScraping(true);
-    setScrapeMsg('');
+    setScrapeJob(null);
     try {
-      await apiFetch('/v1/admin/campaigns/ingest', { method: 'POST' });
-      setScrapeMsg('Scrape triggered — new activities will appear shortly.');
+      const data = await apiFetch('/v1/admin/campaigns/ingest', { method: 'POST' });
+      if (data.success && data.job_id) {
+        setScrapeJob({ status: 'running', started_at: new Date().toISOString(), sources: [], total_events: 0, used_fallback: false, upserted: 0, neighborhoods: 0 });
+        pollJob(data.job_id);
+      }
     } catch {
-      setScrapeMsg('Failed to trigger scrape.');
-    } finally {
       setScraping(false);
+      setScrapeJob({ status: 'error', started_at: new Date().toISOString(), sources: [], total_events: 0, used_fallback: false, upserted: 0, neighborhoods: 0, error: 'Failed to start scrape' });
     }
   };
 
@@ -93,12 +130,12 @@ function DashboardTab() {
   return (
     <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
       <div className="grid grid-cols-2 gap-3">
-        <StatCard icon={<Users className="size-5 text-white" />}   label="Total Users"       value={stats?.users ?? 0}          color="bg-blue-600" />
-        <StatCard icon={<ClipboardList className="size-5 text-white" />} label="Submissions"  value={stats?.submissions ?? 0}    color="bg-purple-600" />
-        <StatCard icon={<CheckCircle className="size-5 text-white" />}   label="Approved"     value={stats?.approved ?? 0}       color="bg-[#14ae5c]" />
-        <StatCard icon={<XCircle className="size-5 text-white" />}       label="Rejected"     value={stats?.rejected ?? 0}       color="bg-red-600" />
-        <StatCard icon={<Zap className="size-5 text-white" />}          label="Activities"    value={stats?.active_campaigns ?? 0} color="bg-amber-600" />
-        <StatCard icon={<Coins className="size-5 text-white" />}        label="Coins Awarded" value={stats?.coins_awarded ?? 0}  color="bg-yellow-600" />
+        <StatCard icon={<Users className="size-5 text-white" />}            label="Total Users"    value={stats?.users ?? 0}            color="bg-blue-600" />
+        <StatCard icon={<ClipboardList className="size-5 text-white" />}    label="Submissions"    value={stats?.submissions ?? 0}      color="bg-purple-600" />
+        <StatCard icon={<CheckCircle className="size-5 text-white" />}      label="Approved"       value={stats?.approved ?? 0}         color="bg-[#14ae5c]" />
+        <StatCard icon={<XCircle className="size-5 text-white" />}          label="Rejected"       value={stats?.rejected ?? 0}         color="bg-red-600" />
+        <StatCard icon={<Zap className="size-5 text-white" />}              label="Activities"     value={stats?.active_campaigns ?? 0} color="bg-amber-600" />
+        <StatCard icon={<Coins className="size-5 text-white" />}            label="Coins Awarded"  value={stats?.coins_awarded ?? 0}    color="bg-yellow-600" />
       </div>
 
       {/* Approval rate */}
@@ -108,32 +145,171 @@ function DashboardTab() {
           <p className="text-white text-[13px] font-semibold">{approvalRate}%</p>
         </div>
         <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-[#14ae5c] rounded-full transition-all duration-700"
-            style={{ width: `${approvalRate}%` }}
-          />
+          <div className="h-full bg-[#14ae5c] rounded-full transition-all duration-700" style={{ width: `${approvalRate}%` }} />
         </div>
       </div>
 
       {/* Scraper */}
-      <div className="bg-gray-900 rounded-2xl p-4">
-        <p className="text-white text-[13px] font-semibold mb-1">Activity Scraper</p>
-        <p className="text-gray-500 text-[12px] mb-3">
-          Fetch new activities from civic sources (cra.dz etc.)
-        </p>
-        {scrapeMsg && (
-          <p className="text-[#14ae5c] text-[12px] mb-3">{scrapeMsg}</p>
+      <div className="bg-gray-900 rounded-2xl p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-white text-[13px] font-semibold">Activity Scraper</p>
+            <p className="text-gray-500 text-[11px] mt-0.5">Fetch from cra.dz, algerian-human.org, youth-ambassadors</p>
+          </div>
+          <button
+            onClick={triggerScrape}
+            disabled={scraping}
+            className="flex items-center gap-1.5 bg-gray-800 text-white px-3 py-2 rounded-xl text-[12px] font-medium active:scale-[0.98] transition-all disabled:opacity-50 shrink-0"
+          >
+            {scraping ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
+            {scraping ? 'Running…' : 'Run Now'}
+          </button>
+        </div>
+
+        {scrapeJob && (
+          <div className={`rounded-xl p-3 space-y-2 ${
+            scrapeJob.status === 'running' ? 'bg-blue-950/50 border border-blue-800/40' :
+            scrapeJob.status === 'done'    ? 'bg-emerald-950/50 border border-emerald-800/40' :
+                                             'bg-red-950/50 border border-red-800/40'
+          }`}>
+            {/* Status header */}
+            <div className="flex items-center gap-2">
+              {scrapeJob.status === 'running' && <Loader2 className="size-3.5 text-blue-400 animate-spin shrink-0" />}
+              {scrapeJob.status === 'done'    && <CheckCircle2 className="size-3.5 text-emerald-400 shrink-0" />}
+              {scrapeJob.status === 'error'   && <AlertTriangle className="size-3.5 text-red-400 shrink-0" />}
+              <p className="text-[12px] font-semibold text-white">
+                {scrapeJob.status === 'running' ? 'Scraping in progress…' :
+                 scrapeJob.status === 'done'    ? `Done — ${scrapeJob.total_events} events, ${scrapeJob.upserted} upserted` :
+                 `Error: ${scrapeJob.error || 'Unknown error'}`}
+              </p>
+            </div>
+
+            {/* Source results */}
+            {scrapeJob.sources.length > 0 && (
+              <div className="space-y-1">
+                {scrapeJob.sources.map(s => (
+                  <div key={s.name} className="flex items-center gap-2">
+                    {s.error
+                      ? <XCircle className="size-3 text-red-400 shrink-0" />
+                      : <CheckCircle2 className="size-3 text-emerald-400 shrink-0" />}
+                    <p className="text-[11px] text-gray-400 truncate flex-1">{s.name}</p>
+                    <p className="text-[11px] text-white font-medium shrink-0">{s.error ? 'failed' : `${s.count} events`}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Summary row */}
+            {scrapeJob.status === 'done' && (
+              <div className="flex items-center gap-3 pt-1 border-t border-white/5 text-[11px] text-gray-400">
+                <span>{scrapeJob.neighborhoods} neighborhoods</span>
+                {scrapeJob.used_fallback && <span className="text-amber-400">· Used fallback events</span>}
+                {scrapeJob.finished_at && (
+                  <span className="ml-auto">
+                    {Math.round((new Date(scrapeJob.finished_at).getTime() - new Date(scrapeJob.started_at).getTime()) / 1000)}s
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         )}
-        <button
-          onClick={triggerScrape}
-          disabled={scraping}
-          className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2.5 rounded-xl text-[13px] font-medium active:scale-[0.98] transition-all disabled:opacity-50"
-        >
-          {scraping
-            ? <Loader2 className="size-4 animate-spin" />
-            : <RefreshCw className="size-4" />}
-          {scraping ? 'Triggering…' : 'Trigger Scrape'}
-        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Admin activity card (dark theme version) ─────────────────────────────────
+
+function AdminActivityCard({ campaign, onEdit, onDelete }: {
+  campaign: any;
+  onEdit: (c: any) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [imgFailed, setImgFailed] = useState(false);
+  let images: string[] = [];
+  try { images = campaign.images_json ? JSON.parse(campaign.images_json) : []; } catch { /* ignore */ }
+  if (images.length === 0 && campaign.image_url) images = [campaign.image_url];
+
+  const dateStr = campaign.start_dt
+    ? new Date(campaign.start_dt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    : '—';
+
+  const initial = (campaign.organizer || 'C').charAt(0).toUpperCase();
+
+  return (
+    <div className="bg-gray-900 rounded-2xl overflow-hidden">
+      {/* Image */}
+      <div className="relative w-full h-[150px]">
+        {images.length > 0 && !imgFailed ? (
+          <img
+            src={images[0]}
+            alt={campaign.title}
+            className="w-full h-full object-cover"
+            onError={() => setImgFailed(true)}
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
+            <Zap className="size-10 text-gray-600" />
+          </div>
+        )}
+        {/* Coin badge */}
+        {campaign.coin_reward > 0 && (
+          <div className="absolute top-2 right-2 flex items-center gap-1 bg-amber-400/90 text-white px-2 py-0.5 rounded-full text-[10px] font-bold">
+            <Coins className="size-2.5" /> {campaign.coin_reward}
+          </div>
+        )}
+        {/* Source badge */}
+        <div className="absolute top-2 left-2 bg-black/50 text-gray-300 px-2 py-0.5 rounded-full text-[10px]">
+          {campaign.source || 'manual'}
+        </div>
+      </div>
+
+      <div className="p-3 space-y-2">
+        {/* Organizer row */}
+        <div className="flex items-center gap-2">
+          {campaign.organizer_logo ? (
+            <img src={campaign.organizer_logo} alt="" className="size-7 rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          ) : (
+            <div className="size-7 rounded-full bg-[#14ae5c]/20 flex items-center justify-center shrink-0">
+              <span className="text-[12px] font-bold text-[#14ae5c]">{initial}</span>
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="text-gray-300 text-[12px] font-medium truncate">{campaign.organizer || 'Community'}</p>
+            <div className="flex items-center gap-1 text-gray-500">
+              <Calendar className="size-3" />
+              <p className="text-[10px]">{dateStr}</p>
+            </div>
+          </div>
+          <p className="text-gray-600 text-[10px] shrink-0">{campaign.participant_count ?? 0} joined</p>
+        </div>
+
+        {/* Title */}
+        <p className="text-white text-[14px] font-semibold leading-snug line-clamp-2">{campaign.title}</p>
+
+        {/* Location */}
+        {campaign.location && (
+          <div className="flex items-center gap-1">
+            <MapPin className="size-3 text-gray-500 shrink-0" />
+            <p className="text-[11px] text-gray-500 truncate">{campaign.location}</p>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex gap-2 pt-1">
+          <button
+            onClick={() => onEdit(campaign)}
+            className="flex-1 flex items-center justify-center gap-1.5 bg-gray-800 text-blue-400 py-2 rounded-xl text-[12px] font-medium active:scale-95 transition-all"
+          >
+            <Pencil className="size-3.5" /> Edit
+          </button>
+          <button
+            onClick={() => onDelete(campaign.id)}
+            className="flex-1 flex items-center justify-center gap-1.5 bg-gray-800 text-red-400 py-2 rounded-xl text-[12px] font-medium active:scale-95 transition-all"
+          >
+            <Trash2 className="size-3.5" /> Delete
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -147,23 +323,29 @@ const EMPTY_FORM = {
   start_dt: '', end_dt: '', url: '',
   image1: '', image2: '', image3: '',
   contact_phone: '', contact_email: '', coin_reward: '50',
+  neighborhood_ids: [] as string[],
 };
 
 function ActivitiesTab() {
-  const [campaigns, setCampaigns]   = useState<any[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [showForm, setShowForm]     = useState(false);
-  const [editId, setEditId]         = useState<string | null>(null);
-  const [deleteId, setDeleteId]     = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [campaigns, setCampaigns]       = useState<any[]>([]);
+  const [neighborhoods, setNeighborhoods] = useState<{ id: string; name: string }[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [showForm, setShowForm]         = useState(false);
+  const [editId, setEditId]             = useState<string | null>(null);
+  const [deleteId, setDeleteId]         = useState<string | null>(null);
+  const [submitting, setSubmitting]     = useState(false);
 
   const [form, setForm] = useState({ ...EMPTY_FORM });
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await apiFetch('/v1/admin/campaigns');
-      if (data.success) setCampaigns(data.data);
+      const [campsData, nhData] = await Promise.all([
+        apiFetch('/v1/admin/campaigns'),
+        apiFetch('/v1/admin/neighborhoods'),
+      ]);
+      if (campsData.success)  setCampaigns(campsData.data);
+      if (nhData.success)     setNeighborhoods(nhData.data);
     } catch { /* ignore */ }
     finally { setLoading(false); }
   }, []);
@@ -181,21 +363,22 @@ function ActivitiesTab() {
     try { images = c.images_json ? JSON.parse(c.images_json) : []; } catch { /* ignore */ }
     setEditId(c.id);
     setForm({
-      title:          c.title          || '',
-      subtitle:       c.subtitle       || '',
-      description:    c.description    || '',
-      organizer:      c.organizer      || '',
-      organizer_logo: c.organizer_logo || '',
-      location:       c.location       || '',
-      start_dt:       c.start_dt       ? c.start_dt.slice(0, 16) : '',
-      end_dt:         c.end_dt         ? c.end_dt.slice(0, 16)   : '',
-      url:            c.url            || '',
-      image1:         images[0]        || '',
-      image2:         images[1]        || '',
-      image3:         images[2]        || '',
-      contact_phone:  c.contact_phone  || '',
-      contact_email:  c.contact_email  || '',
-      coin_reward:    String(c.coin_reward ?? 50),
+      title:            c.title          || '',
+      subtitle:         c.subtitle       || '',
+      description:      c.description    || '',
+      organizer:        c.organizer      || '',
+      organizer_logo:   c.organizer_logo || '',
+      location:         c.location       || '',
+      start_dt:         c.start_dt       ? c.start_dt.slice(0, 16) : '',
+      end_dt:           c.end_dt         ? c.end_dt.slice(0, 16)   : '',
+      url:              c.url            || '',
+      image1:           images[0]        || '',
+      image2:           images[1]        || '',
+      image3:           images[2]        || '',
+      contact_phone:    c.contact_phone  || '',
+      contact_email:    c.contact_email  || '',
+      coin_reward:      String(c.coin_reward ?? 50),
+      neighborhood_ids: [],
     });
     setShowForm(true);
   };
@@ -203,19 +386,20 @@ function ActivitiesTab() {
   const buildBody = () => {
     const images = [form.image1, form.image2, form.image3].filter(Boolean);
     return {
-      title:          form.title,
-      subtitle:       form.subtitle       || null,
-      description:    form.description    || null,
-      organizer:      form.organizer       || null,
-      organizer_logo: form.organizer_logo  || null,
-      location:       form.location        || null,
-      start_dt:       form.start_dt,
-      end_dt:         form.end_dt          || null,
-      url:            form.url             || null,
-      images:         images.length > 0 ? images : undefined,
-      contact_phone:  form.contact_phone   || null,
-      contact_email:  form.contact_email   || null,
-      coin_reward:    parseInt(form.coin_reward) || 50,
+      title:            form.title,
+      subtitle:         form.subtitle        || null,
+      description:      form.description     || null,
+      organizer:        form.organizer        || null,
+      organizer_logo:   form.organizer_logo   || null,
+      location:         form.location         || null,
+      start_dt:         form.start_dt,
+      end_dt:           form.end_dt           || null,
+      url:              form.url              || null,
+      images:           images.length > 0 ? images : undefined,
+      contact_phone:    form.contact_phone    || null,
+      contact_email:    form.contact_email    || null,
+      coin_reward:      parseInt(form.coin_reward) || 50,
+      neighborhood_ids: form.neighborhood_ids.length > 0 ? form.neighborhood_ids : undefined,
     };
   };
 
@@ -251,12 +435,21 @@ function ActivitiesTab() {
     }
   };
 
-  const field = (key: keyof typeof form, label: string, type = 'text', required = false) => (
+  const toggleNeighborhood = (id: string) => {
+    setForm(f => ({
+      ...f,
+      neighborhood_ids: f.neighborhood_ids.includes(id)
+        ? f.neighborhood_ids.filter(n => n !== id)
+        : [...f.neighborhood_ids, id],
+    }));
+  };
+
+  const field = (key: keyof typeof EMPTY_FORM, label: string, type = 'text', required = false) => (
     <div>
       <label className="text-gray-400 text-[11px] uppercase tracking-wider mb-1 block">{label}{required && ' *'}</label>
       <input
         type={type}
-        value={form[key]}
+        value={form[key] as string}
         onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
         required={required}
         className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-[14px] placeholder:text-gray-600 focus:border-[#14ae5c] focus:outline-none transition-colors"
@@ -284,39 +477,17 @@ function ActivitiesTab() {
       ) : campaigns.length === 0 ? (
         <div className="text-center pt-16 text-gray-600 text-[14px]">No activities yet</div>
       ) : (
-        <div className="px-4 space-y-3 pb-6">
+        <div className="px-4 grid grid-cols-1 gap-3 pb-6">
           {campaigns.map(c => (
-            <div key={c.id} className="bg-gray-900 rounded-2xl p-4 flex items-start gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-white text-[14px] font-semibold truncate">{c.title}</p>
-                <p className="text-gray-500 text-[12px] mt-0.5 truncate">{c.organizer || c.source || '—'}</p>
-                <p className="text-gray-600 text-[11px] mt-1">
-                  {c.start_dt ? new Date(c.start_dt).toLocaleDateString() : '—'} · {c.participant_count ?? 0} joined
-                </p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={() => openEdit(c)}
-                  className="size-8 flex items-center justify-center rounded-xl bg-gray-800 text-blue-400 active:scale-95 transition-all"
-                >
-                  <Pencil className="size-4" />
-                </button>
-                <button
-                  onClick={() => setDeleteId(c.id)}
-                  className="size-8 flex items-center justify-center rounded-xl bg-gray-800 text-red-400 active:scale-95 transition-all"
-                >
-                  <Trash2 className="size-4" />
-                </button>
-              </div>
-            </div>
+            <AdminActivityCard key={c.id} campaign={c} onEdit={openEdit} onDelete={setDeleteId} />
           ))}
         </div>
       )}
 
-      {/* Create form overlay */}
+      {/* Create/Edit form overlay */}
       {showForm && (
         <div className="fixed inset-0 bg-gray-950 z-50 flex flex-col">
-          <div className="flex items-center justify-between px-5 pt-[env(safe-area-inset-top)] h-14 mt-2">
+          <div className="flex items-center justify-between px-5 pt-[env(safe-area-inset-top)] h-14 mt-2 shrink-0">
             <h2 className="text-white text-[17px] font-bold">{editId ? 'Edit Activity' : 'New Activity'}</h2>
             <button onClick={() => { setShowForm(false); setEditId(null); }} className="text-gray-400 active:text-white">
               <X className="size-6" />
@@ -350,6 +521,41 @@ function ActivitiesTab() {
             {field('contact_phone', 'Contact Phone')}
             {field('contact_email', 'Contact Email', 'email')}
             {field('coin_reward', 'Coin Reward', 'number')}
+
+            {/* Neighborhood targeting (only for create) */}
+            {!editId && neighborhoods.length > 0 && (
+              <div>
+                <label className="text-gray-400 text-[11px] uppercase tracking-wider mb-2 block">
+                  Target Neighborhoods
+                  <span className="text-gray-600 normal-case ml-1">(none = all)</span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {neighborhoods.map(n => {
+                    const selected = form.neighborhood_ids.includes(n.id);
+                    return (
+                      <button
+                        key={n.id}
+                        type="button"
+                        onClick={() => toggleNeighborhood(n.id)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium transition-all border ${
+                          selected
+                            ? 'bg-[#14ae5c] text-white border-[#14ae5c]'
+                            : 'bg-gray-800 text-gray-400 border-gray-700'
+                        }`}
+                      >
+                        <Building2 className="size-3" />
+                        {n.name}
+                      </button>
+                    );
+                  })}
+                </div>
+                {form.neighborhood_ids.length > 0 && (
+                  <p className="text-[11px] text-[#14ae5c] mt-1.5">
+                    Will be sent to {form.neighborhood_ids.length} neighborhood{form.neighborhood_ids.length > 1 ? 's' : ''}
+                  </p>
+                )}
+              </div>
+            )}
 
             <button
               type="submit"
@@ -391,9 +597,100 @@ function ActivitiesTab() {
   );
 }
 
+// ─── Users tab ────────────────────────────────────────────────────────────────
+
+function UsersTab() {
+  const [users, setUsers]     = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch]   = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await apiFetch('/v1/admin/users');
+      if (data.success) setUsers(data.data);
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const filtered = users.filter(u =>
+    !search ||
+    u.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+    u.email?.toLowerCase().includes(search.toLowerCase()) ||
+    u.neighborhood_name?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Search */}
+      <div className="px-4 py-3 shrink-0">
+        <input
+          type="text"
+          placeholder="Search by name, email, neighborhood…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full bg-gray-900 border border-gray-800 text-white rounded-xl px-4 py-2.5 text-[13px] placeholder:text-gray-600 focus:border-[#14ae5c] focus:outline-none transition-colors"
+        />
+      </div>
+
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="size-7 text-[#14ae5c] animate-spin" />
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto px-4 space-y-2 pb-6">
+          <p className="text-gray-600 text-[11px] mb-1">{filtered.length} users</p>
+          {filtered.map(u => (
+            <div key={u.id} className="bg-gray-900 rounded-2xl p-3.5 flex items-center gap-3">
+              {/* Avatar */}
+              <div className="size-10 rounded-full bg-gray-800 flex items-center justify-center shrink-0">
+                <span className="text-[16px] font-bold text-gray-400">
+                  {(u.full_name || u.email || '?').charAt(0).toUpperCase()}
+                </span>
+              </div>
+
+              {/* Info */}
+              <div className="min-w-0 flex-1">
+                <p className="text-white text-[13px] font-semibold truncate">{u.full_name || '—'}</p>
+                <div className="flex items-center gap-1 text-gray-500">
+                  <Mail className="size-3 shrink-0" />
+                  <p className="text-[11px] truncate">{u.email}</p>
+                </div>
+                <div className="flex items-center gap-3 mt-0.5">
+                  {u.neighborhood_name && (
+                    <div className="flex items-center gap-1 text-gray-600">
+                      <MapPin className="size-3 shrink-0" />
+                      <p className="text-[10px] truncate">{u.neighborhood_name}</p>
+                    </div>
+                  )}
+                  {u.coins_earned > 0 && (
+                    <div className="flex items-center gap-1 text-amber-500">
+                      <Coins className="size-3 shrink-0" />
+                      <p className="text-[10px]">{u.coins_earned}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Role badge */}
+              {u.role === 'admin' && (
+                <span className="shrink-0 bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded-full text-[10px] font-semibold">
+                  admin
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main AdminPanel ──────────────────────────────────────────────────────────
 
-type Tab = 'dashboard' | 'activities';
+type Tab = 'dashboard' | 'activities' | 'users';
 
 export default function AdminPanel() {
   useAdminGuard();
@@ -410,7 +707,7 @@ export default function AdminPanel() {
       <div className="flex flex-col size-full bg-gray-950">
 
         {/* Top bar */}
-        <div className="pt-[env(safe-area-inset-top)] px-5 bg-gray-950">
+        <div className="pt-[env(safe-area-inset-top)] px-5 bg-gray-950 shrink-0">
           <div className="flex items-center justify-between h-14">
             <div>
               <p className="text-white text-[17px] font-bold leading-tight">Admin Panel</p>
@@ -427,18 +724,17 @@ export default function AdminPanel() {
         </div>
 
         {/* Tab bar */}
-        <div className="flex bg-gray-900 mx-4 rounded-2xl p-1 mt-1 mb-3">
+        <div className="flex bg-gray-900 mx-4 rounded-2xl p-1 mt-1 mb-3 shrink-0">
           {([
-            { key: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="size-4" /> },
-            { key: 'activities', label: 'Activities', icon: <Zap className="size-4" /> },
+            { key: 'dashboard',  label: 'Dashboard',   icon: <LayoutDashboard className="size-4" /> },
+            { key: 'activities', label: 'Activities',  icon: <Zap className="size-4" /> },
+            { key: 'users',      label: 'Users',       icon: <Users className="size-4" /> },
           ] as { key: Tab; label: string; icon: React.ReactNode }[]).map(t => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
-                tab === t.key
-                  ? 'bg-[#14ae5c] text-white shadow'
-                  : 'text-gray-500'
+              className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-[12px] font-semibold transition-all ${
+                tab === t.key ? 'bg-[#14ae5c] text-white shadow' : 'text-gray-500'
               }`}
             >
               {t.icon}
@@ -448,11 +744,12 @@ export default function AdminPanel() {
         </div>
 
         {/* Content */}
-        {tab === 'dashboard'   && <DashboardTab />}
-        {tab === 'activities'  && <ActivitiesTab />}
+        {tab === 'dashboard'  && <DashboardTab />}
+        {tab === 'activities' && <ActivitiesTab />}
+        {tab === 'users'      && <UsersTab />}
 
         {/* Bottom safe area */}
-        <div className="pb-[env(safe-area-inset-bottom)]" />
+        <div className="pb-[env(safe-area-inset-bottom)] shrink-0" />
       </div>
     </MobileContainer>
   );
