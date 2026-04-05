@@ -98,6 +98,8 @@ interface LeftoverOffer {
   food_type: string;
   portions: number;
   created_at: string;
+  image_url: string | null;
+  image_urls: string[];
   user: { display_name: string };
 }
 
@@ -271,18 +273,18 @@ export default function Home() {
                   </div>
                   <div className="flex gap-3 overflow-x-auto -mx-1 px-1 pb-2">
                     {recentOffers.length > 0 ? (
-                      recentOffers.map(offer => (
+                      recentOffers.map((offer: any) => (
                         <RecentPostCard
                           key={offer.id}
                           name={offer.user?.display_name || 'Neighbor'}
                           item={offer.title || offer.food_type}
                           time={getRelativeTime(offer.created_at)}
                           coins={0}
-                          image=""
+                          image={offer.image_urls?.[0] || offer.image_url || ''}
                           Icon={Utensils}
                           iconBg="bg-orange-50"
                           iconColor="text-orange-400"
-                          onClick={() => navigate('/category/leftovers')}
+                          onClick={() => navigate(`/leftovers/${offer.id}`)}
                         />
                       ))
                     ) : (

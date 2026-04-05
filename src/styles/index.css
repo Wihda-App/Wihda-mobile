@@ -125,7 +125,7 @@ button, a, [role="button"] {
 }
 
 .animate-page-slide-in {
-  animation: page-slide-in 0.35s cubic-bezier(0.2, 0, 0, 1) forwards;
+  animation: page-slide-in 0.35s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .animate-page-fade-in {

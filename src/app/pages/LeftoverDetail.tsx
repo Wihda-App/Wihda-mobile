@@ -17,6 +17,7 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
+  Pencil,
 } from 'lucide-react';
 
 function getRelativeTime(isoDate: string) {
@@ -114,12 +115,7 @@ export default function LeftoverDetail() {
                 <Heart className={`size-5 ${isFavorited ? 'text-red-500 fill-red-500' : 'text-gray-400'}`} />
               </button>
             )}
-            {!loading && offer && isOwner && (
-              <button onClick={handleDelete} className="p-1 text-red-400 active:scale-90 transition-transform">
-                <Trash2 className="size-5" />
-              </button>
-            )}
-            {(loading || !offer) && <div className="size-6" />}
+            {(loading || !offer || isOwner) && <div className="size-6" />}
           </div>
         </div>
 
@@ -267,8 +263,19 @@ export default function LeftoverDetail() {
         )}
 
         {!loading && offer && isOwner && (
-          <div className="px-5 pb-[max(env(safe-area-inset-bottom),16px)] pt-3 border-t border-gray-100 dark:border-gray-800">
-            <p className="text-center text-[13px] text-gray-400">This is your offer</p>
+          <div className="px-5 pb-[max(env(safe-area-inset-bottom),16px)] pt-3 border-t border-gray-100 dark:border-gray-800 flex gap-3">
+            <button
+              onClick={() => navigate(`/post-item/leftovers?edit=${id}`)}
+              className="flex-1 bg-[#14ae5c]/10 text-[#14ae5c] py-4 rounded-2xl text-[15px] font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+            >
+              <Pencil className="size-5" /> Edit Offer
+            </button>
+            <button
+              onClick={handleDelete}
+              className="bg-red-50 text-red-500 px-5 py-4 rounded-2xl text-[15px] font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+            >
+              <Trash2 className="size-5" />
+            </button>
           </div>
         )}
       </div>
