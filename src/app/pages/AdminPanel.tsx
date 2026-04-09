@@ -23,12 +23,6 @@ const PALETTE = ['#14ae5c', '#52ADE5', '#f0a326', '#e74c3c', '#8e44ad', '#1abc9c
 const DEFAULT_LAT = 36.7538;
 const DEFAULT_LNG = 3.0588;
 
-function distMeters(lat1: number, lng1: number, lat2: number, lng2: number) {
-  return Math.sqrt(
-    Math.pow((lat1 - lat2) * 111000, 2) +
-    Math.pow((lng1 - lng2) * 111000 * Math.cos((lat1 * Math.PI) / 180), 2),
-  );
-}
 
 // ─── Admin guard ──────────────────────────────────────────────────────────────
 
@@ -961,10 +955,6 @@ interface AdminNeighborhood {
   radius_meters: number; member_count: number;
 }
 
-const NH_EMPTY = {
-  name: '', description: '', color: '#14ae5c', city: '', country: 'DZ',
-  center_lat: DEFAULT_LAT, center_lng: DEFAULT_LNG, radius_meters: 500,
-};
 
 function NeighborhoodsTab() {
   const [hoods, setHoods]     = useState<AdminNeighborhood[]>([]);
@@ -1122,7 +1112,7 @@ function NeighborhoodMapOverlay({
       zoomControl: false,
     });
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_matter/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       attribution: '© OpenStreetMap © CARTO',
       subdomains: 'abcd',
       maxZoom: 19,
