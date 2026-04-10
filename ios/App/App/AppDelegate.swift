@@ -35,10 +35,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
         // When the app is opened via our custom URL scheme (e.g. Google OAuth callback),
-        // dismiss any presented view controller (SFSafariViewController) immediately.
+        // find the topmost presented view controller (SFSafariViewController) and dismiss it.
         if url.scheme == "com.wihda.app" {
             DispatchQueue.main.async {
-                self.window?.rootViewController?.dismiss(animated: true, completion: nil)
+                guard let root = self.window?.rootViewController else { return }
+                var top: UIViewController = root
+                while let presented = top.presentedViewController {
+                    top = presented
+                }
+                // top is now the SFSafariViewController — dismiss it
+                top.dismiss(animated: true, completion: nil)
             }
         }
         // Called when the app was launched with a url. Feel free to add additional processing here,
