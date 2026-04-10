@@ -1358,7 +1358,28 @@ function VerifyReviewOverlay({
   const [rejectNote, setRejectNote] = useState('');
   const [showRejectInput, setShowRejectInput] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [imgSrcs, setImgSrcs] = useState<Record<string, string>>({});
   const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const token = localStorage.getItem('wihda_access_token') || '';
+    const blobUrls: string[] = [];
+    (['front', 'back', 'selfie'] as const).forEach(async (key) => {
+      try {
+        const res = await fetch(`${API_BASE}/v1/admin/verifications/${session.id}/document/${key}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error();
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        blobUrls.push(url);
+        setImgSrcs(prev => ({ ...prev, [key]: url }));
+      } catch {
+        setImgErrors(prev => ({ ...prev, [key]: true }));
+      }
+    });
+    return () => { blobUrls.forEach(u => URL.revokeObjectURL(u)); };
+  }, [session.id]);
 
   const handleApprove = async () => {
     setSubmitting(true);
@@ -1427,13 +1448,10 @@ function VerifyReviewOverlay({
                     <ImageIcon className="size-6 text-gray-600" />
                     <span className="text-[9px] text-gray-600">Not uploaded</span>
                   </div>
+                ) : imgSrcs[key] ? (
+                  <img src={imgSrcs[key]} alt={label} className="w-full h-full object-cover" />
                 ) : (
-                  <img
-                    src={docUrl(session.id, key)}
-                    alt={label}
-                    className="w-full h-full object-cover"
-                    onError={() => setImgErrors(prev => ({ ...prev, [key]: true }))}
-                  />
+                  <Loader2 className="size-5 text-gray-600 animate-spin" />
                 )}
               </div>
             </div>
@@ -1453,7 +1471,8 @@ function VerifyReviewOverlay({
           <div className="flex items-center justify-between">
             <span className="text-gray-500 text-[12px]">Submitted</span>
             <span className="text-white text-[13px] font-medium">
-              {new Date(session.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              {new Date(session.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}{' '}
+              {new Date(session.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>
           <div className="flex items-center justify-between">
@@ -1611,6 +1630,9 @@ function VerifyTab() {
                 <div className="text-right shrink-0">
                   <p className="text-gray-500 text-[11px]">
                     {new Date(session.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </p>
+                  <p className="text-gray-600 text-[10px]">
+                    {new Date(session.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                   </p>
                   {subTab === 'pending' && (
                     <p className="text-yellow-400 text-[10px] font-semibold mt-0.5">PENDING</p>
