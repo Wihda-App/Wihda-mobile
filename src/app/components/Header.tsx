@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import {
   Menu,
@@ -17,10 +17,12 @@ import {
   Home as HomeIcon,
   Leaf,
   Settings,
+  MessageCircle,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import { t } from '../lib/i18n';
+import { apiFetch } from '../lib/api';
 
 interface HeaderProps {
   showBack?: boolean;
@@ -46,6 +48,15 @@ export default function Header({
     { label: t(language, 'settings'),     path: '/settings',        Icon: Settings },
     { label: t(language, 'notifications'), path: '/notifications',  Icon: Bell },
   ];
+
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!profile) return;
+    apiFetch('/v1/chats/unread')
+      .then((data) => { if (data.success) setUnreadCount(data.data.unread_count ?? 0); })
+      .catch(() => {});
+  }, [profile]);
 
   const userName = profile?.name?.split(' ')[0] || 'Neighbor';
   const neighborhood = profile?.location || 'Set location';
@@ -98,14 +109,30 @@ export default function Header({
             </div>
           </div>
 
-          {/* Right side — menu */}
-          <button
-            className="text-gray-800"
-            aria-label="Menu"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="size-6" />
-          </button>
+          {/* Right side — chat + menu */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/conversations')}
+              className="relative text-gray-700 active:scale-90 transition-transform"
+              aria-label="Messages"
+            >
+              <MessageCircle className="size-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] bg-[#14ae5c] rounded-full border-2 border-white flex items-center justify-center px-0.5">
+                  <span className="text-[8px] font-bold text-white leading-none">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                </span>
+              )}
+            </button>
+            <button
+              className="text-gray-800"
+              aria-label="Menu"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu className="size-6" />
+            </button>
+          </div>
         </div>
         <div className="mt-1">
           <h2 className="text-[20px] md:text-[24px] font-semibold text-gray-900 font-[Poppins,sans-serif]">

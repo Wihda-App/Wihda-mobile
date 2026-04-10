@@ -37,6 +37,7 @@ import Settings from "./pages/Settings";
 import ChangeEmail from "./pages/ChangeEmail";
 import ChangePassword from "./pages/ChangePassword";
 import LeftoverDetail from "./pages/LeftoverDetail";
+import Conversations from "./pages/Conversations";
 
 let _router: ReturnType<typeof createBrowserRouter> | null = null;
 
@@ -151,6 +152,10 @@ export function getRouter() {
           {
             path: "post-item/:categoryId",
             Component: PostItem,
+          },
+          {
+            path: "conversations",
+            Component: Conversations,
           },
           {
             path: "chat/:chatId",
