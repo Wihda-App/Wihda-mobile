@@ -144,7 +144,7 @@ export default function VerifyIdentity() {
 
       // 2. Upload directly
       const uploadRes = await fetch(uploadUrl, {
-        method: 'PUT',
+        method: 'POST',
         headers: { 'Content-Type': file.type || 'image/jpeg' },
         body: file,
       });
