@@ -8,6 +8,7 @@ import { t } from '../lib/i18n';
 import { API_BASE, setTokens } from '../lib/api';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
+import { App } from '@capacitor/app';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -20,11 +21,15 @@ export default function Login() {
   const location = useLocation();
   const { signIn, refreshProfile } = useAuth();
   const { language } = useApp();
-  const browserListenerRef = useRef<{ remove: () => void } | null>(null);
+  const browserListenerRef  = useRef<{ remove: () => void } | null>(null);
+  const urlOpenListenerRef  = useRef<{ remove: () => void } | null>(null);
 
-  // Clean up browser listener on unmount
+  // Clean up listeners on unmount
   useEffect(() => {
-    return () => { browserListenerRef.current?.remove(); };
+    return () => {
+      browserListenerRef.current?.remove();
+      urlOpenListenerRef.current?.remove();
+    };
   }, []);
 
   const handleGoogleLogin = useCallback(async () => {
@@ -37,47 +42,52 @@ export default function Login() {
     }
 
     // Native (iOS / Android): open SFSafariViewController / Chrome Custom Tab.
-    // Google allows OAuth in these — NOT in plain WebViews.
-    // Flow: open browser → user signs in → backend stores tokens in KV →
-    //       app polls session endpoint → Browser.close() → navigate to home.
+    // Flow:
+    //   1. App opens SFSafariViewController
+    //   2. User signs in with Google
+    //   3. Backend redirects to com.wihda.app://auth/callback?access_token=...
+    //   4. iOS opens the app via URL scheme → appUrlOpen fires
+    //   5. App extracts tokens, calls Browser.close() to dismiss the blank SVC, navigates home
     try {
       const sessionId = Array.from(crypto.getRandomValues(new Uint8Array(16)))
         .map(b => b.toString(16).padStart(2, '0')).join('');
 
       let done = false;
 
-      // If user manually closes the browser before OAuth completes
-      browserListenerRef.current = await Browser.addListener('browserFinished', () => {
+      const cleanup = () => {
         browserListenerRef.current?.remove();
         browserListenerRef.current = null;
+        urlOpenListenerRef.current?.remove();
+        urlOpenListenerRef.current = null;
+      };
+
+      // PRIMARY: iOS opens app via URL scheme after Google OAuth completes
+      urlOpenListenerRef.current = await App.addListener('appUrlOpen', async (event: any) => {
+        const url = event.url as string;
+        if (!url.startsWith('com.wihda.app://auth/callback')) return;
+        const params = new URL(url.replace('com.wihda.app://', 'https://x.com/'));
+        const accessToken  = params.searchParams.get('access_token');
+        const refreshToken = params.searchParams.get('refresh_token') || '';
+        if (!accessToken) return;
+        done = true;
+        cleanup();
+        setTokens(accessToken, refreshToken);
+        // SFSafariViewController is still on screen (showing blank) — dismiss it
+        try { await Browser.close(); } catch { /* ignore */ }
+        navigate('/home');
+        refreshProfile().catch(() => {});
+      });
+
+      // FALLBACK: user manually closed the browser without finishing
+      browserListenerRef.current = await Browser.addListener('browserFinished', () => {
+        cleanup();
         if (!done) setGoogleLoading(false);
       });
 
       await Browser.open({
         url: `${API_BASE}/v1/auth/google?session_id=${sessionId}`,
-        presentationStyle: 'popover',
+        presentationStyle: 'fullscreen',
       });
-
-      // Poll for tokens while the browser is open (every 800 ms, up to 40 s)
-      for (let i = 0; i < 50 && !done; i++) {
-        if (i > 0) await new Promise(r => setTimeout(r, 800));
-        try {
-          const res  = await fetch(`${API_BASE}/v1/auth/google/session?id=${sessionId}`);
-          const data = await res.json() as any;
-          if (data?.success && data?.data?.access_token) {
-            done = true;
-            browserListenerRef.current?.remove();
-            browserListenerRef.current = null;
-            await Browser.close();
-            setTokens(data.data.access_token, data.data.refresh_token || '');
-            navigate('/home');
-            refreshProfile().catch(() => {});
-            return;
-          }
-        } catch { /* network hiccup — keep polling */ }
-      }
-
-      if (!done) setGoogleLoading(false);
     } catch {
       setGoogleLoading(false);
     }
