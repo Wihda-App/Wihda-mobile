@@ -29,6 +29,7 @@ import {
   Loader2,
   Leaf,
   ShieldAlert,
+  ShieldCheck,
 } from 'lucide-react';
 
 
@@ -174,15 +175,26 @@ export default function Profile() {
                 <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
               </div>
               <div className="flex-1">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="text-[18px] font-semibold text-gray-900">{displayName}</h2>
                   {!isGuest && <Crown className="size-4 text-[#f0a326]" />}
-                  {!isGuest && user?.verificationStatus !== 'verified' && (
+                  {!isGuest && user?.verificationStatus === 'verified' && (
+                    <span className="flex items-center gap-1 text-[10px] bg-green-50 text-[#14ae5c] px-2 py-0.5 rounded-full font-semibold">
+                      <ShieldCheck className="size-3" /> Verified
+                    </span>
+                  )}
+                  {!isGuest && user?.verificationStatus === 'pending' && (
+                    <span className="flex items-center gap-1 text-[10px] bg-blue-50 text-blue-500 px-2 py-0.5 rounded-full font-medium">
+                      <ShieldAlert className="size-3" /> Under Review
+                    </span>
+                  )}
+                  {!isGuest && (user?.verificationStatus === 'unverified' || user?.verificationStatus === 'failed') && (
                     <button
                       onClick={() => navigate('/verify-identity')}
                       className="flex items-center gap-1 text-[10px] bg-orange-50 text-orange-500 px-2 py-0.5 rounded-full font-medium"
                     >
-                      <ShieldAlert className="size-3" /> {t(language, 'unverifiedLabel')}
+                      <ShieldAlert className="size-3" />
+                      {user?.verificationStatus === 'failed' ? 'Rejected — Retry' : t(language, 'unverifiedLabel')}
                     </button>
                   )}
                 </div>

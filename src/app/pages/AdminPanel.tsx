@@ -7,7 +7,8 @@ import {
   Users, ClipboardList, CheckCircle, XCircle, Coins,
   X, Loader2, RefreshCw, Mail, MapPin, Calendar,
   AlertTriangle, CheckCircle2, Building2, Sparkles, Globe,
-  ChevronDown, Minus,
+  ChevronDown, Minus, ShieldCheck, ShieldX, Clock, ChevronLeft,
+  ImageIcon,
 } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -1321,9 +1322,315 @@ function NeighborhoodMapOverlay({
   );
 }
 
+// ─── Verify tab ──────────────────────────────────────────────────────────────
+
+interface VerifySession {
+  id: string;
+  user_id: string;
+  display_name: string;
+  email: string;
+  status: string;
+  attempt_count: number;
+  front_doc_key: string | null;
+  back_doc_key: string | null;
+  selfie_key: string | null;
+  manual_note: string | null;
+  manual_reviewed_at: string | null;
+  created_at: string;
+}
+
+const API_BASE = (import.meta as any).env?.VITE_API_URL || 'https://api.wihdaapp.com';
+
+function docUrl(sessionId: string, type: 'front' | 'back' | 'selfie') {
+  const token = localStorage.getItem('wihda_access_token') || '';
+  return `${API_BASE}/v1/admin/verifications/${sessionId}/document/${type}?token=${encodeURIComponent(token)}`;
+}
+
+function VerifyReviewOverlay({
+  session,
+  onClose,
+  onDone,
+}: {
+  session: VerifySession;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [rejectNote, setRejectNote] = useState('');
+  const [showRejectInput, setShowRejectInput] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
+
+  const handleApprove = async () => {
+    setSubmitting(true);
+    try {
+      await apiFetch('/v1/verification/admin/review', {
+        method: 'POST',
+        body: JSON.stringify({ session_id: session.id, approved: true, note: 'Approved by admin' }),
+      });
+      onDone();
+    } catch (e: any) {
+      alert(e?.message || 'Failed to approve');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejectNote.trim()) return;
+    setSubmitting(true);
+    try {
+      await apiFetch('/v1/verification/admin/review', {
+        method: 'POST',
+        body: JSON.stringify({ session_id: session.id, approved: false, note: rejectNote.trim() }),
+      });
+      onDone();
+    } catch (e: any) {
+      alert(e?.message || 'Failed to reject');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const docs: { key: 'front' | 'back' | 'selfie'; label: string }[] = [
+    { key: 'front', label: 'ID Front' },
+    { key: 'back',  label: 'ID Back'  },
+    { key: 'selfie',label: 'Selfie'   },
+  ];
+
+  return (
+    <div className="fixed inset-0 bg-gray-950 z-50 flex flex-col">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-5 pt-[env(safe-area-inset-top)] h-14 mt-2 shrink-0 border-b border-gray-800">
+        <button onClick={onClose} className="text-gray-400 active:text-white">
+          <ChevronLeft className="size-6" />
+        </button>
+        <div className="flex-1 min-w-0">
+          <p className="text-white text-[15px] font-bold truncate">{session.display_name}</p>
+          <p className="text-gray-500 text-[11px] truncate">{session.email}</p>
+        </div>
+        <span className="text-[10px] font-semibold text-yellow-400 bg-yellow-400/10 px-2 py-1 rounded-full">
+          PENDING
+        </span>
+      </div>
+
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto px-5 py-4">
+        {/* Documents */}
+        <p className="text-gray-400 text-[11px] uppercase tracking-wider mb-3">Documents</p>
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          {docs.map(({ key, label }) => (
+            <div key={key} className="flex flex-col gap-1">
+              <p className="text-gray-500 text-[10px] text-center">{label}</p>
+              <div className="aspect-[3/4] rounded-xl overflow-hidden bg-gray-800 flex items-center justify-center">
+                {imgErrors[key] ? (
+                  <div className="flex flex-col items-center gap-1">
+                    <ImageIcon className="size-6 text-gray-600" />
+                    <span className="text-[9px] text-gray-600">Not uploaded</span>
+                  </div>
+                ) : (
+                  <img
+                    src={docUrl(session.id, key)}
+                    alt={label}
+                    className="w-full h-full object-cover"
+                    onError={() => setImgErrors(prev => ({ ...prev, [key]: true }))}
+                  />
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* User info */}
+        <div className="bg-gray-900 rounded-2xl p-4 mb-6 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-gray-500 text-[12px]">Name</span>
+            <span className="text-white text-[13px] font-medium">{session.display_name}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-500 text-[12px]">Email</span>
+            <span className="text-white text-[13px] font-medium">{session.email}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-500 text-[12px]">Submitted</span>
+            <span className="text-white text-[13px] font-medium">
+              {new Date(session.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-gray-500 text-[12px]">Attempts</span>
+            <span className="text-white text-[13px] font-medium">{session.attempt_count}</span>
+          </div>
+        </div>
+
+        {/* Reject input */}
+        {showRejectInput && (
+          <div className="mb-4">
+            <label className="text-gray-400 text-[11px] uppercase tracking-wider mb-2 block">
+              Rejection Reason <span className="text-red-400">*</span>
+            </label>
+            <textarea
+              value={rejectNote}
+              onChange={e => setRejectNote(e.target.value)}
+              placeholder="Explain why the verification was rejected…"
+              rows={3}
+              className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-[13px] focus:border-red-500 focus:outline-none resize-none"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="shrink-0 px-5 py-4 border-t border-gray-800 bg-gray-950 space-y-3 pb-[calc(env(safe-area-inset-bottom)+16px)]">
+        {!showRejectInput ? (
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowRejectInput(true)}
+              disabled={submitting}
+              className="flex-1 flex items-center justify-center gap-2 bg-red-500/10 text-red-400 border border-red-500/30 py-3.5 rounded-2xl text-[14px] font-semibold active:scale-[0.97] transition-all disabled:opacity-50"
+            >
+              <ShieldX className="size-4" /> Reject
+            </button>
+            <button
+              onClick={handleApprove}
+              disabled={submitting}
+              className="flex-1 flex items-center justify-center gap-2 bg-[#14ae5c] text-white py-3.5 rounded-2xl text-[14px] font-semibold active:scale-[0.97] transition-all disabled:opacity-50"
+            >
+              {submitting ? <Loader2 className="size-4 animate-spin" /> : <><ShieldCheck className="size-4" /> Approve</>}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <button
+              onClick={handleReject}
+              disabled={submitting || !rejectNote.trim()}
+              className="w-full flex items-center justify-center gap-2 bg-red-500 text-white py-3.5 rounded-2xl text-[14px] font-semibold active:scale-[0.97] transition-all disabled:opacity-50"
+            >
+              {submitting ? <Loader2 className="size-4 animate-spin" /> : <><ShieldX className="size-4" /> Confirm Rejection</>}
+            </button>
+            <button
+              onClick={() => { setShowRejectInput(false); setRejectNote(''); }}
+              className="w-full text-gray-500 py-2.5 text-[13px]"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function VerifyTab() {
+  const [subTab, setSubTab] = useState<'pending' | 'history'>('pending');
+  const [pending, setPending] = useState<VerifySession[]>([]);
+  const [history, setHistory] = useState<VerifySession[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<VerifySession | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [pendingData, historyData] = await Promise.all([
+        apiFetch('/v1/admin/verifications'),
+        apiFetch('/v1/admin/verifications/history'),
+      ]);
+      if (pendingData.success) setPending(pendingData.data || []);
+      if (historyData.success) setHistory(historyData.data || []);
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  if (selected) {
+    return (
+      <VerifyReviewOverlay
+        session={selected}
+        onClose={() => setSelected(null)}
+        onDone={() => { setSelected(null); load(); }}
+      />
+    );
+  }
+
+  const list = subTab === 'pending' ? pending : history;
+
+  return (
+    <div className="flex-1 overflow-y-auto">
+      {/* Sub-tabs */}
+      <div className="flex bg-gray-900 mx-4 rounded-2xl p-1 mb-3">
+        {(['pending', 'history'] as const).map(k => (
+          <button
+            key={k}
+            onClick={() => setSubTab(k)}
+            className={`flex-1 py-2 rounded-xl text-[12px] font-semibold transition-all ${subTab === k ? 'bg-[#14ae5c] text-white' : 'text-gray-500'}`}
+          >
+            {k === 'pending' ? `Pending${pending.length > 0 ? ` (${pending.length})` : ''}` : 'History'}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="size-8 text-[#14ae5c] animate-spin" />
+        </div>
+      ) : list.length === 0 ? (
+        <div className="flex flex-col items-center py-16 px-8">
+          <div className="size-14 rounded-full bg-gray-800 flex items-center justify-center mb-3">
+            {subTab === 'pending'
+              ? <Clock className="size-6 text-gray-500" />
+              : <CheckCircle2 className="size-6 text-gray-500" />}
+          </div>
+          <p className="text-gray-400 text-[14px] font-medium">
+            {subTab === 'pending' ? 'No pending requests' : 'No verified users yet'}
+          </p>
+        </div>
+      ) : (
+        <div className="px-4 space-y-3 pb-8">
+          {list.map(session => (
+            <button
+              key={session.id}
+              onClick={() => subTab === 'pending' ? setSelected(session) : undefined}
+              className={`w-full bg-gray-900 rounded-2xl p-4 text-left border transition-all ${
+                subTab === 'pending'
+                  ? 'border-gray-800 active:border-[#14ae5c] active:scale-[0.98]'
+                  : 'border-gray-800 cursor-default'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`size-10 rounded-full flex items-center justify-center shrink-0 ${
+                  subTab === 'pending' ? 'bg-yellow-400/10' : 'bg-[#14ae5c]/10'
+                }`}>
+                  {subTab === 'pending'
+                    ? <Clock className="size-5 text-yellow-400" />
+                    : <ShieldCheck className="size-5 text-[#14ae5c]" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-[14px] font-semibold truncate">{session.display_name}</p>
+                  <p className="text-gray-500 text-[12px] truncate">{session.email}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-gray-500 text-[11px]">
+                    {new Date(session.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </p>
+                  {subTab === 'pending' && (
+                    <p className="text-yellow-400 text-[10px] font-semibold mt-0.5">PENDING</p>
+                  )}
+                  {subTab === 'history' && (
+                    <p className="text-[#14ae5c] text-[10px] font-semibold mt-0.5">VERIFIED</p>
+                  )}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main AdminPanel ──────────────────────────────────────────────────────────
 
-type Tab = 'dashboard' | 'activities' | 'users' | 'neighborhoods';
+type Tab = 'dashboard' | 'activities' | 'users' | 'neighborhoods' | 'verify';
 
 export default function AdminPanel() {
   useAdminGuard();
@@ -1360,10 +1667,11 @@ export default function AdminPanel() {
         {/* Tab bar */}
         <div className="flex bg-gray-900 mx-4 rounded-2xl p-1 mt-1 mb-3 shrink-0">
           {([
-            { key: 'dashboard',     label: 'Home',    icon: <LayoutDashboard className="size-3.5" /> },
-            { key: 'activities',    label: 'Events',  icon: <Zap className="size-3.5" /> },
-            { key: 'neighborhoods', label: 'Areas',   icon: <Globe className="size-3.5" /> },
-            { key: 'users',         label: 'Users',   icon: <Users className="size-3.5" /> },
+            { key: 'dashboard',     label: 'Home',   icon: <LayoutDashboard className="size-3.5" /> },
+            { key: 'activities',    label: 'Events', icon: <Zap className="size-3.5" /> },
+            { key: 'neighborhoods', label: 'Areas',  icon: <Globe className="size-3.5" /> },
+            { key: 'users',         label: 'Users',  icon: <Users className="size-3.5" /> },
+            { key: 'verify',        label: 'Verify', icon: <ShieldCheck className="size-3.5" /> },
           ] as { key: Tab; label: string; icon: React.ReactNode }[]).map(t => (
             <button
               key={t.key}
@@ -1383,6 +1691,7 @@ export default function AdminPanel() {
         {tab === 'activities'    && <ActivitiesTab />}
         {tab === 'neighborhoods' && <NeighborhoodsTab />}
         {tab === 'users'         && <UsersTab />}
+        {tab === 'verify'        && <VerifyTab />}
 
         {/* AI Generator overlay */}
         {showAIGen && <AIGeneratorPage onClose={() => setShowAIGen(false)} />}

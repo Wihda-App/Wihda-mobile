@@ -387,14 +387,14 @@ export default function VerifyIdentity() {
                   </div>
                 )}
               </div>
-              <h2 className="text-[20px] font-bold text-gray-900 text-center mb-2">Under Review</h2>
+              <h2 className="text-[20px] font-bold text-gray-900 text-center mb-2">Verification Under Review</h2>
               <p className="text-[13px] text-gray-500 text-center mb-6 leading-relaxed">
-                Your documents have been submitted. Our AI is reviewing them now.
-                {polling ? ' Checking for updates…' : ' This usually takes 1–2 minutes.'}
+                Your documents have been submitted and are being reviewed by our team.
+                {polling ? ' Checking for updates…' : ' This usually takes a few hours.'}
               </p>
               <div className="w-full bg-blue-50 rounded-2xl p-4 mb-6">
                 <p className="text-[12px] text-blue-700 leading-relaxed">
-                  You'll be automatically redirected once your identity is confirmed. You can also come back later.
+                  You'll receive a notification once your identity is confirmed. You can safely leave this screen.
                 </p>
               </div>
               <button
