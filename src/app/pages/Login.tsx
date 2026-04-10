@@ -61,8 +61,9 @@ export default function Login() {
         urlOpenListenerRef.current = null;
       };
 
-      // PRIMARY: iOS opens app via URL scheme after Google OAuth completes
-      urlOpenListenerRef.current = await App.addListener('appUrlOpen', async (event: any) => {
+      // PRIMARY: iOS opens app via URL scheme after Google OAuth completes.
+      // AppDelegate.swift already dismissed SFSafariViewController natively at this point.
+      urlOpenListenerRef.current = await App.addListener('appUrlOpen', (event: any) => {
         const url = event.url as string;
         if (!url.startsWith('com.wihda.app://auth/callback')) return;
         const params = new URL(url.replace('com.wihda.app://', 'https://x.com/'));
@@ -72,8 +73,6 @@ export default function Login() {
         done = true;
         cleanup();
         setTokens(accessToken, refreshToken);
-        // SFSafariViewController is still on screen (showing blank) — dismiss it
-        try { await Browser.close(); } catch { /* ignore */ }
         navigate('/home');
         refreshProfile().catch(() => {});
       });
