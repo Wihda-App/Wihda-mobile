@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import MobileContainer from '../components/MobileContainer';
 import PageTransition from '../components/PageTransition';
-import { apiFetch } from '../lib/api';
+import { apiFetch, apiUpload } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import {
   ArrowLeft, Camera, Check, Loader2, ShieldCheck,
@@ -126,30 +126,13 @@ export default function VerifyIdentity() {
     }));
 
     try {
-      // 1. Get presigned URL
-      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-      const safeExt = ['jpg', 'jpeg', 'png', 'webp'].includes(ext) ? ext : 'jpg';
+      // Upload via multipart form data — single authenticated request
+      const form = new FormData();
+      form.append('session_id', sessionId);
+      form.append('document_type', type);
+      form.append('file', file);
 
-      const urlRes = await apiFetch('/v1/verification/presigned-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          session_id: sessionId,
-          document_type: type,
-          file_extension: safeExt,
-        }),
-      });
-
-      const uploadUrl: string = urlRes.data.upload_url;
-
-      // 2. Upload directly
-      const uploadRes = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': file.type || 'image/jpeg' },
-        body: file,
-      });
-
-      if (!uploadRes.ok) throw new Error('Upload failed');
+      await apiUpload('/v1/verification/upload', form);
 
       setDocs((prev) => ({
         ...prev,
