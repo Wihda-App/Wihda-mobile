@@ -75,6 +75,8 @@ export default function Login() {
         setTokens(accessToken, refreshToken);
         navigate('/home');
         refreshProfile().catch(() => {});
+        // Close the in-app browser — delay to let UIKit finish the URL-scheme transition
+        setTimeout(() => Browser.close().catch(() => {}), 400);
       });
 
       // FALLBACK: user manually closed the browser without finishing

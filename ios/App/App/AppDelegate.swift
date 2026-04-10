@@ -38,7 +38,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // When the app is opened via our custom URL scheme (e.g. Google OAuth callback),
         // find the topmost presented view controller (SFSafariViewController) and dismiss it.
         if url.scheme == "com.wihda.app" {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                 guard let root = self.window?.rootViewController else { return }
                 // Find the VC that directly presents the SFSafariViewController
                 // and dismiss from there (so any alert on top of SFSafariVC goes with it)
