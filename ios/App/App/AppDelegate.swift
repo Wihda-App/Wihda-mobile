@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import SafariServices
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -37,14 +38,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // When the app is opened via our custom URL scheme (e.g. Google OAuth callback),
         // find the topmost presented view controller (SFSafariViewController) and dismiss it.
         if url.scheme == "com.wihda.app" {
-            DispatchQueue.main.async {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                 guard let root = self.window?.rootViewController else { return }
-                var top: UIViewController = root
-                while let presented = top.presentedViewController {
-                    top = presented
+                // Find the VC that directly presents the SFSafariViewController
+                // and dismiss from there (so any alert on top of SFSafariVC goes with it)
+                var vc: UIViewController? = root
+                while let current = vc {
+                    if let presented = current.presentedViewController, presented is SFSafariViewController {
+                        current.dismiss(animated: true, completion: nil)
+                        return
+                    }
+                    vc = current.presentedViewController
                 }
-                // top is now the SFSafariViewController — dismiss it
-                top.dismiss(animated: true, completion: nil)
+                // Fallback: dismiss whatever is presented on root
+                root.dismiss(animated: true, completion: nil)
             }
         }
         // Called when the app was launched with a url. Feel free to add additional processing here,
