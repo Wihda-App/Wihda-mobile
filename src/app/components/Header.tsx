@@ -101,12 +101,12 @@ export default function Header({
             <button onClick={() => navigate('/store')} className="text-gray-700 active:scale-90 transition-transform" aria-label="Store">
               <ShoppingBag className="size-5" />
             </button>
-            <div className="flex items-center gap-1.5 bg-[#fff9e6] px-2.5 py-1.5 rounded-full">
+            <button onClick={() => navigate('/profile')} className="flex items-center gap-1.5 bg-[#fff9e6] px-2.5 py-1.5 rounded-full active:scale-95 transition-transform">
               <div className="size-[16px] rounded-full border-[1.5px] border-[#f0a326] flex items-center justify-center">
                 <span className="text-[7px] font-bold text-[#f0a326]">$</span>
               </div>
               <span className="text-[13px] md:text-[15px] font-semibold text-[#f0a326]">{coinsBalance}</span>
-            </div>
+            </button>
           </div>
 
           {/* Right side — chat + menu */}
