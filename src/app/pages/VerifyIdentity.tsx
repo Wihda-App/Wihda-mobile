@@ -140,7 +140,8 @@ export default function VerifyIdentity() {
       }));
       toast.success(`${DOC_META[type].label} uploaded`);
     } catch (err: any) {
-      toast.error(`Failed to upload ${DOC_META[type].label}`);
+      const detail = err?.message ? ` (${err.message})` : '';
+      toast.error(`Failed to upload ${DOC_META[type].label}${detail}`);
       setDocs((prev) => ({
         ...prev,
         [type]: { file: null, preview: null, uploaded: false, uploading: false },
