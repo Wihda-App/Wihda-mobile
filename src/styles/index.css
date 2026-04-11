@@ -204,6 +204,33 @@ input[type="range"]::-moz-range-thumb {
   }
 }
 
+/* ── iPad / tablet: centered phone-frame layout ──────────────────────────── */
+@media (min-width: 768px) {
+  body {
+    background: #e5e7eb; /* gray-200 visible in the gutters */
+  }
+
+  /* The app shell is centered with a card shadow */
+  .app-shell {
+    max-width: 500px;
+    margin: 0 auto;
+    min-height: 100dvh;
+    position: relative;
+    box-shadow: 0 0 80px rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+  }
+
+  /*
+   * Constrain fixed elements (bottom nav, sidebar, bottom sheet) to the
+   * app frame. calc(50% - 250px) = left edge of the 500px centered container.
+   * max(0px, ...) ensures it never goes negative on narrow screens.
+   */
+  .app-fixed {
+    left:  max(0px, calc(50% - 250px)) !important;
+    right: max(0px, calc(50% - 250px)) !important;
+  }
+}
+
 /* Safe area env() support for all devices */
 :root {
   --safe-area-inset-top: env(safe-area-inset-top, 0px);

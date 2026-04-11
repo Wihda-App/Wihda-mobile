@@ -6,7 +6,9 @@ export default function RootLayout() {
   return (
     <AppProvider>
       <AuthProvider>
-        <Outlet />
+        <div className="app-shell">
+          <Outlet />
+        </div>
       </AuthProvider>
     </AppProvider>
   );

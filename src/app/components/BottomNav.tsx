@@ -50,7 +50,7 @@ export default function BottomNav() {
           />
 
           {/* Sheet panel */}
-          <div className="relative w-full bg-white rounded-t-3xl px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+24px)] animate-slide-up shadow-2xl">
+          <div className="app-fixed relative bg-white rounded-t-3xl px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+24px)] animate-slide-up shadow-2xl">
             {/* Handle bar */}
             <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
 
@@ -90,7 +90,7 @@ export default function BottomNav() {
       )}
 
       {/* Nav Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 pb-[max(env(safe-area-inset-bottom),var(--sab,0px))]">
+      <div className="app-fixed fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 pb-[max(env(safe-area-inset-bottom),var(--sab,0px))]">
         <div className="flex items-center h-[64px] md:h-[72px] max-w-3xl mx-auto">
           {navItems.map((item) => {
             if (item.path === '__fab__') {
