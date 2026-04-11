@@ -44,9 +44,7 @@ export default function GoogleCallback() {
 
     if (accessToken) {
       setTokens(accessToken, refreshToken || '');
-      // Web: check server-side onboarding flag before navigating
-      await refreshProfile();
-      navigate('/home', { replace: true });
+      refreshProfile().then(() => navigate('/home', { replace: true }));
       return;
     }
 
