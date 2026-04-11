@@ -152,8 +152,8 @@ export default function Header({
           {/* Backdrop — full screen dim */}
           <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
 
-          {/* Sidebar panel — constrained to app frame */}
-          <div className="app-fixed fixed top-0 bottom-0 right-0 bg-white dark:bg-gray-900 w-[280px] md:w-[340px] flex flex-col overflow-y-auto shadow-2xl z-[70]">
+          {/* Sidebar panel */}
+          <div className="relative bg-white dark:bg-gray-900 w-[280px] md:w-[340px] h-full flex flex-col overflow-y-auto shadow-2xl">
             {/* Close button */}
             <button onClick={() => setSidebarOpen(false)} className="absolute top-4 right-4 text-gray-400">
               <X className="size-6" />

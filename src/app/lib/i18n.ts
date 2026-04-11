@@ -2,11 +2,13 @@ export type Lang = 'en' | 'ar';
 
 const translations = {
   en: {
-    // Bottom nav
+    // Bottom nav / sidebar
     home: 'Home',
     store: 'Store',
     activities: 'Activities',
     profile: 'Profile',
+    messages: 'Messages',
+    post: 'Post',
     // Side menu
     myListings: 'My Listings',
     myImpact: 'My Impact',
@@ -299,11 +301,13 @@ const translations = {
     notifHelpRequestTitle: 'New Help Request!',
   },
   ar: {
-    // Bottom nav
+    // Bottom nav / sidebar
     home: 'الرئيسية',
     store: 'المتجر',
     activities: 'الأنشطة',
     profile: 'ملفي',
+    messages: 'الرسائل',
+    post: 'نشر',
     // Side menu
     myListings: 'قوائمي',
     myImpact: 'تأثيري',
