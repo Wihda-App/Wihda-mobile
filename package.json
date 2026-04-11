@@ -15,6 +15,7 @@
     "mobile:build": "vite build && npx cap sync"
   },
   "dependencies": {
+    "@capacitor-community/apple-sign-in": "^7.1.0",
     "@capacitor/android": "^7.0.0",
     "@capacitor/app": "^7.0.0",
     "@capacitor/browser": "^7.0.4",
