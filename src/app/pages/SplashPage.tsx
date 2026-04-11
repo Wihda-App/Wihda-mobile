@@ -15,8 +15,10 @@ export default function SplashPage() {
       const token = getStoredToken();
       if (token) {
         navigate('/home');
-      } else {
+      } else if (localStorage.getItem('wihda_onboarding_done')) {
         navigate('/login');
+      } else {
+        navigate('/onboarding');
       }
     }, 2500);
     return () => {

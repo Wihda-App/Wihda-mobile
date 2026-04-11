@@ -38,6 +38,7 @@ import ChangeEmail from "./pages/ChangeEmail";
 import ChangePassword from "./pages/ChangePassword";
 import LeftoverDetail from "./pages/LeftoverDetail";
 import Conversations from "./pages/Conversations";
+import Onboarding from "./pages/Onboarding";
 
 let _router: ReturnType<typeof createBrowserRouter> | null = null;
 
@@ -60,6 +61,10 @@ export function getRouter() {
           {
             path: "admin-panel",
             Component: AdminPanel,
+          },
+          {
+            path: "onboarding",
+            Component: Onboarding,
           },
           {
             path: "login",
