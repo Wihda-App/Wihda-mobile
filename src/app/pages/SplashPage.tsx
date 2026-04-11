@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import imgWihdaTextLogo1 from "figma:asset/ee118e5efe643d9ee6880fd61bb3d74d5253e1aa.png";
 import { getStoredToken } from '../lib/api';
+import { Capacitor } from '@capacitor/core';
 
 export default function SplashPage() {
   const navigate = useNavigate();
@@ -15,10 +16,16 @@ export default function SplashPage() {
       const token = getStoredToken();
       if (token) {
         navigate('/home');
-      } else if (localStorage.getItem('wihda_onboarding_done')) {
-        navigate('/login');
+      } else if (Capacitor.isNativePlatform()) {
+        // Mobile: pre-login onboarding gated by localStorage
+        if (localStorage.getItem('wihda_onboarding_done')) {
+          navigate('/login');
+        } else {
+          navigate('/onboarding');
+        }
       } else {
-        navigate('/onboarding');
+        // Web: onboarding is shown post-login based on server-side flag
+        navigate('/login');
       }
     }, 2500);
     return () => {

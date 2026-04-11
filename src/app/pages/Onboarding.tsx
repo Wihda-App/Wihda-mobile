@@ -1,5 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router';
+import { Capacitor } from '@capacitor/core';
+import { apiFetch, getStoredToken } from '../lib/api';
 import onboarding1 from '../assets/onboarding1.png';
 import onboarding2 from '../assets/onboarding2.png';
 import onboarding3 from '../assets/onboarding3.png';
@@ -27,9 +29,20 @@ export default function Onboarding() {
   const [current, setCurrent] = useState(0);
   const touchStartX = useRef<number | null>(null);
 
-  const finish = () => {
-    localStorage.setItem('wihda_onboarding_done', '1');
-    navigate('/login', { replace: true });
+  const finish = async () => {
+    if (Capacitor.isNativePlatform()) {
+      // Mobile: gate with localStorage, send user to login
+      localStorage.setItem('wihda_onboarding_done', '1');
+      navigate('/login', { replace: true });
+    } else {
+      // Web: mark on server (fire-and-forget, ignore errors), go to home if logged in
+      if (getStoredToken()) {
+        apiFetch('/v1/me/onboarding-complete', { method: 'POST' }).catch(() => {});
+        navigate('/home', { replace: true });
+      } else {
+        navigate('/login', { replace: true });
+      }
+    }
   };
 
   const next = () => {

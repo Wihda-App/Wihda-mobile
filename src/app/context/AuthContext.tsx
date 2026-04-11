@@ -22,6 +22,7 @@ export interface UserProfile {
   coins: number;
   role: string;
   verificationStatus: string;
+  onboardingCompleted: boolean;
   createdAt: string;
 }
 
@@ -47,9 +48,10 @@ export interface AuthContextType {
     code?: string;
     restrictedToken?: string;
     contactChannel?: string;
+    onboardingCompleted?: boolean;
   }>;
   signOut: () => void;
-  refreshProfile: () => Promise<void>;
+  refreshProfile: () => Promise<UserProfile | null>;
   updateProfile: (updates: { name?: string; language?: string; bio?: string }) => Promise<{ error?: string }>;
 }
 
@@ -64,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async () => {
+  const fetchProfile = useCallback(async (): Promise<UserProfile | null> => {
     try {
       const data = await apiFetch('/v1/me');
       if (data.success && data.data) {
@@ -83,11 +85,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           coins: d.coin_balance ?? 0,
           role: d.role,
           verificationStatus: d.verification_status,
+          onboardingCompleted: d.onboarding_completed ?? false,
           createdAt: d.created_at,
         };
         setUser(p);
         setProfile(p);
+        return p;
       }
+      return null;
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setUser(null);
@@ -95,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         console.error('Error fetching profile:', err);
       }
+      return null;
     }
   }, []);
 
@@ -148,8 +154,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data.success) {
         const { access_token, refresh_token } = data.data;
         setTokens(access_token, refresh_token);
-        await fetchProfile();
-        return {};
+        const p = await fetchProfile();
+        return { onboardingCompleted: p?.onboardingCompleted ?? true };
       }
       return { error: 'Login failed' };
     } catch (err) {
@@ -186,10 +192,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // ─── refreshProfile ──────────────────────────────────────────────────────────
 
-  const refreshProfile = async () => {
+  const refreshProfile = async (): Promise<UserProfile | null> => {
     if (getStoredToken()) {
-      await fetchProfile();
+      return fetchProfile();
     }
+    return null;
   };
 
   // ─── updateProfile ───────────────────────────────────────────────────────────

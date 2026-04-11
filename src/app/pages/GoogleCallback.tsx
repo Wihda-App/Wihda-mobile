@@ -4,6 +4,7 @@ import MobileContainer from '../components/MobileContainer';
 import { useAuth } from '../context/AuthContext';
 import { setTokens } from '../lib/api';
 import wihdaLogo from '../../assets/wihda_logo.png';
+import { Capacitor } from '@capacitor/core';
 
 /**
  * Handles Google OAuth redirects from the backend.
@@ -43,7 +44,13 @@ export default function GoogleCallback() {
 
     if (accessToken) {
       setTokens(accessToken, refreshToken || '');
-      window.location.replace('/home');
+      // Web: check server-side onboarding flag before navigating
+      const p = await refreshProfile();
+      if (!Capacitor.isNativePlatform() && p && p.onboardingCompleted === false) {
+        navigate('/onboarding', { replace: true });
+      } else {
+        navigate('/home', { replace: true });
+      }
       return;
     }
 
