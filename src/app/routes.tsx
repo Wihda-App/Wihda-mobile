@@ -20,6 +20,7 @@ import Notifications from "./pages/Notifications";
 import Leftovers from "./pages/Leftovers";
 import NotFound from "./pages/NotFound";
 import GoogleCallback from "./pages/GoogleCallback";
+import AppleCallback from "./pages/AppleCallback";
 import ForgotPassword from "./pages/ForgotPassword";
 import HelpCenter from "./pages/HelpCenter";
 import MyListings from "./pages/MyListings";
@@ -173,6 +174,10 @@ export function getRouter() {
           {
             path: "auth/google/callback",
             Component: GoogleCallback,
+          },
+          {
+            path: "auth/apple/callback",
+            Component: AppleCallback,
           },
           {
             path: "forgot-password",
