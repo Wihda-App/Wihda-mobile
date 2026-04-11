@@ -30,13 +30,9 @@ export default function Onboarding() {
 
   const finish = () => {
     if (Capacitor.isNativePlatform()) {
-      // Mobile: gate with localStorage, send user to login
       localStorage.setItem('wihda_onboarding_done', '1');
-      navigate('/login', { replace: true });
-    } else {
-      // Web: always go to home (already logged in, no flag check)
-      navigate('/home', { replace: true });
     }
+    navigate('/login', { replace: true });
   };
 
   const next = () => {

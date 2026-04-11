@@ -122,11 +122,7 @@ export default function Login() {
       }
       setError(result.error);
     } else {
-      if (!Capacitor.isNativePlatform()) {
-        navigate('/onboarding');
-      } else {
-        navigate('/home');
-      }
+      navigate('/home');
     }
   };
 

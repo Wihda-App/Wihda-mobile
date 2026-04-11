@@ -17,15 +17,15 @@ export default function SplashPage() {
       if (token) {
         navigate('/home');
       } else if (Capacitor.isNativePlatform()) {
-        // Mobile: pre-login onboarding gated by localStorage
+        // Mobile: only show once, gated by localStorage
         if (localStorage.getItem('wihda_onboarding_done')) {
           navigate('/login');
         } else {
           navigate('/onboarding');
         }
       } else {
-        // Web: onboarding is shown post-login based on server-side flag
-        navigate('/login');
+        // Web: always show onboarding before login
+        navigate('/onboarding');
       }
     }, 2500);
     return () => {

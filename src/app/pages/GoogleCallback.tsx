@@ -46,11 +46,7 @@ export default function GoogleCallback() {
       setTokens(accessToken, refreshToken || '');
       // Web: check server-side onboarding flag before navigating
       await refreshProfile();
-      if (!Capacitor.isNativePlatform()) {
-        navigate('/onboarding', { replace: true });
-      } else {
-        navigate('/home', { replace: true });
-      }
+      navigate('/home', { replace: true });
       return;
     }
 
