@@ -81,12 +81,16 @@ export default function Onboarding() {
         <div className="w-full relative overflow-hidden" style={{ height: '45vh' }}>
           <div
             className="flex h-full transition-transform duration-400 ease-in-out will-change-transform"
-            style={{ transform: `translateX(-${current * 100}%)` }}
+            style={{
+              width: `${SLIDES.length * 100}%`,
+              transform: `translateX(-${current * (100 / SLIDES.length)}%)`,
+            }}
           >
             {SLIDES.map((s, i) => (
               <div
                 key={i}
-                className="shrink-0 w-full h-full flex items-center justify-center"
+                className="h-full flex items-center justify-center"
+                style={{ width: `${100 / SLIDES.length}%` }}
               >
                 <img
                   src={s.image}
