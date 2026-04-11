@@ -45,8 +45,8 @@ export default function GoogleCallback() {
     if (accessToken) {
       setTokens(accessToken, refreshToken || '');
       // Web: check server-side onboarding flag before navigating
-      const p = await refreshProfile();
-      if (!Capacitor.isNativePlatform() && p && p.onboardingCompleted === false) {
+      await refreshProfile();
+      if (!Capacitor.isNativePlatform()) {
         navigate('/onboarding', { replace: true });
       } else {
         navigate('/home', { replace: true });
