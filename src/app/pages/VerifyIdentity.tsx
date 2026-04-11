@@ -67,10 +67,11 @@ export default function VerifyIdentity() {
   // Check existing status on mount
   useEffect(() => {
     apiFetch('/v1/verification/status')
-      .then((res) => {
+      .then(async (res) => {
         const status = res?.data?.verification_status;
         const session = res?.data?.session;
         if (status === 'verified') {
+          await refreshProfile();
           setStep('approved');
         } else if (status === 'pending' || session?.status === 'processing' || session?.status === 'pending') {
           setSessionId(session?.id ?? null);
@@ -84,6 +85,18 @@ export default function VerifyIdentity() {
       .catch(() => {}); // not logged in yet — fine
   }, []);
 
+  // Restart polling when user returns to the tab / app
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && step === 'submitted' && !pollTimerRef.current) {
+        startPolling(sessionId);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [step, sessionId]);
+
+  // Cleanup interval on unmount
   useEffect(() => {
     return () => { if (pollTimerRef.current) clearInterval(pollTimerRef.current); };
   }, []);
@@ -173,30 +186,28 @@ export default function VerifyIdentity() {
   // ── poll ─────────────────────────────────────────────────────────────────────
   const startPolling = (sid: string | null) => {
     if (!sid) return;
+    if (pollTimerRef.current) return; // already polling
     setPolling(true);
-    let attempts = 0;
     pollTimerRef.current = setInterval(async () => {
-      attempts++;
       try {
         const res = await apiFetch('/v1/verification/status');
         const status = res?.data?.verification_status;
         if (status === 'verified') {
           clearInterval(pollTimerRef.current!);
+          pollTimerRef.current = null;
           setPolling(false);
           setStep('approved');
           await refreshProfile();
         } else if (status === 'failed') {
           clearInterval(pollTimerRef.current!);
+          pollTimerRef.current = null;
           setPolling(false);
           setRejectionReason(res?.data?.session?.rejection_reason || 'Verification failed.');
           setStep('failed');
-        } else if (attempts >= 40) {
-          // ~2 min timeout — stop polling, stay on submitted
-          clearInterval(pollTimerRef.current!);
-          setPolling(false);
         }
+        // No timeout cap — keep polling until admin makes a decision
       } catch {}
-    }, 3000);
+    }, 5000); // 5s interval — less aggressive, admin reviews take time
   };
 
   const removeDoc = (type: DocType) => {
